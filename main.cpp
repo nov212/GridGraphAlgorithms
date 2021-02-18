@@ -70,6 +70,9 @@ int main(int argc, char **argv)
 			start->GetPoint(cellPointIds->GetId(j), point);
 			std::cout << point[0] << ' ' << point[1] << ' ' << point[2] << std::endl;
 		}
+
+		vtkSmartPointer<vtkPolyData> sg = vtkSmartPointer<vtkPolyData>::New();
+		sg->
 	}
 
     return 0;

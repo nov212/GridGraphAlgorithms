@@ -1,6 +1,7 @@
 set ( SOURCE_FILES
 	vtkExample.cpp
 	BFS.cpp
+	PathFinderAlgorithm.cpp
 	main.cpp
 )
 
