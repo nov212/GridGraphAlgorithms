@@ -1,5 +1,7 @@
 #include "PFStrategy.h"
 #include <queue>
+#include <set>
+#include <hash_map>
 #include <cmath>
 
 void PFStrategy::GetAdj(vtkSmartPointer<vtkUnstructuredGrid> graph, vtkIdType vertex, 
@@ -35,8 +37,16 @@ void PFStrategy::GetAdj(vtkSmartPointer<vtkUnstructuredGrid> graph, vtkIdType ve
 		}
 	}
 }
+
 vtkSmartPointer<vtkIdList> BFS::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end) 
 {
+	if (start == end)
+	{
+		vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+		result->InsertId(start);
+		return result;
+	}
+
 	int* prev = new int[grid->GetNumberOfPoints()]; //массив предыдущих элементов
 	std::queue<int> idq;
 	for (vtkIdType i = 0; i < grid->GetNumberOfPoints(); i++)
@@ -59,8 +69,11 @@ vtkSmartPointer<vtkIdList> BFS::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid,
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
 			int next = cellPointIds->GetId(j);
-			idq.push(next);
-			prev[next] = current;
+			if (prev[next] == -1)
+			{
+				idq.push(next);
+				prev[next] = current;
+			}
 		}
 
 	}
@@ -79,47 +92,63 @@ vtkSmartPointer<vtkIdList> BFS::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid,
 
 }
 
+AStar::Node::Node(vtkIdType _id, vtkIdType _prev, double _cost) :id(_id), prev(_prev), cost(_cost) {}
+
 vtkSmartPointer<vtkIdList> AStar::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end)
 {
-	int *prev = new int[grid->GetNumberOfPoints()];
-	int *cost = new int[grid->GetNumberOfPoints()];
-	int next = 0;
-	double tenativeScore = 0;
-	std::priority_queue<int, double, std::greater<double>> idq;
+	if (start == end)
+	{
+		vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+		result->InsertId(start);
+		return result;
+	}
 
-	for (int i = 0; i < grid->GetNumberOfPoints(); i++)
+	/*int *prev = new int[grid->GetNumberOfPoints()];
+	int *cost = new int[grid->GetNumberOfPoints()];*/
+	int next = 0;
+	double gValue = 0;
+	double fValue = 0;
+	std::set<Node&> closed;
+	auto cmp = [](const Node *n1, const Node *n2) {return (n1->cost > n2->cost); };
+	std::priority_queue<const Node*, std::vector<Node*>, decltype(cmp)> idq(cmp);
+
+	/*for (int i = 0; i < grid->GetNumberOfPoints(); i++)
 	{
 		prev[i] = -1;
 		cost = 0;
-	}
+	}*/
 
-	vtkIdType current = start;
-	idq.emplace(start, 0);
+	Node* current = NULL;
+	idq.emplace(new Node(start, Heuristic(grid, start, end)));
 	while (!idq.empty())
 	{
 		current = idq.top();
 		idq.pop();
-		if (current == end)
+		closed.emplace(current);
+		if (current->id == end)
 			break;
 
 		//соседи текущей вершины
 		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
-		GetAdj(grid, current, cellPointIds);
+		GetAdj(grid, current->id, cellPointIds);
 
 		//добавление в очередь точек, смежных с текущей
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
+			if 
 			next = cellPointIds->GetId(j);
-			tenativeScore = cost[next] + 1;
+			gValue = cost[next] + 1;
+			fValue = gValue + Heuristic(grid, current->cost, end);
 
-			//пропуск рассомтренных вершин или неперспективных 
-			if (prev[next] > -1 && tenativeScore > cost[next])
-				continue;
+			////пропуск рассомтренных вершин или неперспективных 
+			//if (prev[next] > -1 && tenativeScore > cost[next])
+			//	continue;
 
-			if (prev[next] == -1 || tenativeScore < cost[next])
+			if (prev[next] == -1 || fValue < cost[next])
 			{
-				prev[next] = current;
-				cost[next] = tenativeScore;
+				prev[next] = current->id;
+				cost[next] = fValue;
+				idq.emplace(new Node(next, fValue));
 			}
 		}
 	}
@@ -133,4 +162,67 @@ double AStar::Heuristic(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType sta
 	grid->GetPoint(target, p2);
 	double result = sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2));
 	return result;
+}
+
+vtkSmartPointer<vtkIdList>BiDirectional::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end)
+{
+	if (start == end)
+	{
+		vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+		result->InsertId(start);
+		return result;
+	}
+	int* prev = new int[grid->GetNumberOfPoints()]; //массив предыдущих элементов
+	//метка для вершин:
+	//	N - вершина не помечена
+	//  F - вершина помечена в прямом направлении
+	//	B - вершина помечена встречным направлением
+	char* label= new char[grid->GetNumberOfPoints()]; 
+	std::queue<int> idq;
+	for (vtkIdType i = 0; i < grid->GetNumberOfPoints(); i++)
+	{
+		prev[i] = -1;
+		label[i] = 'N';
+	}
+	vtkIdType current = start;
+	vtkIdType intersec = end; //точка пересечения
+	vtkIdType oncoming = start; //вершина, у которой сосед принадлежит пересечению
+	bool solved = false;
+	label[start] = 'F';
+	label[end] ='B';
+	idq.push(start);
+	idq.push(end);
+	while (!idq.empty())
+	{
+		current = idq.front();
+		idq.pop();
+
+		//соседи текущей вершины
+		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
+		GetAdj(grid, current, cellPointIds);
+
+		//добавление в очередь точек, смежных с текущей
+		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
+		{
+			int next = cellPointIds->GetId(j);
+			if (label[next] == 'N')
+			{
+				idq.push(next);
+				label[next] = label[current];
+				prev[next] = current;
+			}
+			else 
+				if (label[next] !=label[current])
+				{
+					intersec = next;
+					oncoming = current;
+					solved = true;
+					break;
+				}
+		}
+		
+		if (solved)
+			break;
+	}
+
 }

@@ -31,6 +31,13 @@ class AStar : public PFStrategy
 public:
 	vtkSmartPointer<vtkIdList> Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end);
 private:
+	struct Node
+	{
+		vtkIdType id;
+		vtkIdType prev;
+		double cost;
+		Node(vtkIdType _id, vtkIdType _prev=-1, double _cost=0);
+	};
 	double Heuristic(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType target);
 };
 
