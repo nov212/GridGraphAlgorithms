@@ -1,5 +1,6 @@
 #pragma once
-#include<vtkPoints.h>
+#include "Graph.h"
+#include <vtkPoints.h>
 #include <vtkUnstructuredGrid.h>
 #include <vtkIdList.h>
 #include <vtkSmartPointer.h>
@@ -15,21 +16,19 @@
 class PFStrategy
 {
 public:
-	virtual vtkSmartPointer<vtkIdList> Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end)=0;
-protected:
-	void PFStrategy::GetAdj(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType vertex, vtkSmartPointer<vtkIdList> neighbours);
+	virtual vtkSmartPointer<vtkIdList> Solve( Graph *grid, vtkIdType start, vtkIdType end)=0;
 };
 
 class BFS :public PFStrategy
 {
 public:
-	vtkSmartPointer<vtkIdList> Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end) override;
+	vtkSmartPointer<vtkIdList> Solve(Graph *grid, vtkIdType start, vtkIdType end) override;
 };
 
 class AStar : public PFStrategy
 {
 public:
-	vtkSmartPointer<vtkIdList> Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end);
+	vtkSmartPointer<vtkIdList> Solve(Graph *grid, vtkIdType start, vtkIdType end) override;
 private:
 	struct Node
 	{
@@ -38,11 +37,11 @@ private:
 		double cost;
 		Node(vtkIdType _id, vtkIdType _prev=-1, double _cost=0);
 	};
-	double Heuristic(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType target);
+	double Heuristic(Graph *grid, vtkIdType start, vtkIdType target);
 };
 
 class BiDirectional:public PFStrategy
 {
 public:
-	vtkSmartPointer<vtkIdList> Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end) override;
+	vtkSmartPointer<vtkIdList> Solve(Graph *grid, vtkIdType start, vtkIdType end) override;
 };

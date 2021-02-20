@@ -4,46 +4,28 @@
 #include <hash_map>
 #include <cmath>
 
-void PFStrategy::GetAdj(vtkSmartPointer<vtkUnstructuredGrid> graph, vtkIdType vertex, 
-	vtkSmartPointer<vtkIdList> neighbours)
-{	
-	//получение ячеек, в которые входит точка
-	vtkSmartPointer<vtkIdList> cellIdList =vtkSmartPointer<vtkIdList>::New();
-	graph->GetPointCells(vertex, cellIdList);
-
-	//просмотр всех ячеек, в которые входит точка
-	for (vtkIdType i = 0; i < cellIdList->GetNumberOfIds(); i++)
+vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
+{
+	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+	if (prev[end] > -1)
 	{
-		vtkSmartPointer<vtkCell> cell = graph->GetCell(cellIdList->GetId(i));
-
-		//просмотр всех рёбер, ячейки
-		for (vtkIdType e = 0; e < cell->GetNumberOfEdges(); e++)
+		int current = end;
+		while (prev[current] != -1)
 		{
-			vtkSmartPointer<vtkCell> edge = cell->GetEdge(e);
-			vtkSmartPointer<vtkIdList> pointIdList = edge->GetPointIds();
-
-			//получение id соседней с vertex вершиной
-			if (pointIdList->GetId(0) == vertex || pointIdList->GetId(1) == vertex)
-			{
-				if (pointIdList->GetId(0) == vertex)
-				{
-					neighbours->InsertNextId(pointIdList->GetId(1));
-				}
-				else
-				{
-					neighbours->InsertNextId(pointIdList->GetId(0));
-				}
-			}
+			result->InsertNextId(current);
+			current = prev[current];
 		}
+		result->InsertNextId(current);
 	}
+	return result;
 }
 
-vtkSmartPointer<vtkIdList> BFS::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end) 
+vtkSmartPointer<vtkIdList> BFS::Solve( Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
 	{
 		vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
-		result->InsertId(start);
+		result->InsertNextId(start);
 		return result;
 	}
 
@@ -63,7 +45,7 @@ vtkSmartPointer<vtkIdList> BFS::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid,
 
 		//соседи текущей вершины
 		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
-		GetAdj(grid, current, cellPointIds);
+		grid->GetAdj(current, cellPointIds);
 
 		//добавление в очередь точек, смежных с текущей
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
@@ -77,29 +59,17 @@ vtkSmartPointer<vtkIdList> BFS::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid,
 		}
 
 	}
-
-	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
-	if (prev[end] > -1)
-	{
-		while (prev[current] != -1)
-		{
-			result->InsertNextId(current);
-			current = prev[current];
-		}
-		result->InsertNextId(current);
-	}
-	return result;
-
+	return BuildPath(prev, start, end);
 }
 
 AStar::Node::Node(vtkIdType _id, vtkIdType _prev, double _cost) :id(_id), prev(_prev), cost(_cost) {}
 
-vtkSmartPointer<vtkIdList> AStar::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end)
+vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
 	{
 		vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
-		result->InsertId(start);
+		result->InsertNextId(start);
 		return result;
 	}
 
@@ -130,7 +100,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(vtkSmartPointer<vtkUnstructuredGrid> gri
 
 		//соседи текущей вершины
 		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
-		GetAdj(grid, current->id, cellPointIds);
+		grid->GetAdj(current->id, cellPointIds);
 
 		//добавление в очередь точек, смежных с текущей
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
@@ -154,7 +124,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(vtkSmartPointer<vtkUnstructuredGrid> gri
 	}
 }
 
-double AStar::Heuristic(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType target)
+double AStar::Heuristic(Graph *grid, vtkIdType start, vtkIdType target)
 {
 	double p1[3];
 	double p2[3];
@@ -164,12 +134,12 @@ double AStar::Heuristic(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType sta
 	return result;
 }
 
-vtkSmartPointer<vtkIdList>BiDirectional::Solve(vtkSmartPointer<vtkUnstructuredGrid> grid, vtkIdType start, vtkIdType end)
+vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
 	{
 		vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
-		result->InsertId(start);
+		result->InsertNextId(start);
 		return result;
 	}
 	int* prev = new int[grid->GetNumberOfPoints()]; //массив предыдущих элементов
@@ -199,7 +169,7 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(vtkSmartPointer<vtkUnstructuredGr
 
 		//соседи текущей вершины
 		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
-		GetAdj(grid, current, cellPointIds);
+		grid->GetAdj(current, cellPointIds);
 
 		//добавление в очередь точек, смежных с текущей
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
@@ -225,4 +195,22 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(vtkSmartPointer<vtkUnstructuredGr
 			break;
 	}
 
+	if (solved)
+	{
+		//соединение двух путей в месте пересечения
+		int nextVert = prev[intersec];
+		int prevVert = oncoming;
+		int currVert = intersec;
+
+		while (currVert != -1)
+		{
+			nextVert = prev[currVert];
+			prev[currVert] = prevVert;
+			prevVert = currVert;
+			currVert = nextVert;
+		}
+	}
+	return BuildPath(prev, start, end);
 }
+
+
