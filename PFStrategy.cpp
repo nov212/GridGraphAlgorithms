@@ -1,7 +1,7 @@
 #include "PFStrategy.h"
 #include <queue>
-#include <set>
-#include <hash_map>
+#include <unordered_map>
+#include "PriorityQueue.h"
 #include <cmath>
 
 vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
@@ -62,7 +62,7 @@ vtkSmartPointer<vtkIdList> BFS::Solve( Graph *grid, vtkIdType start, vtkIdType e
 	return BuildPath(prev, start, end);
 }
 
-AStar::Node::Node(vtkIdType _id, vtkIdType _prev, double _cost) :id(_id), prev(_prev), cost(_cost) {}
+AStar::Node::Node(vtkIdType _id, Node *_prev, double _cost) :id(_id), prev(_prev), cost(_cost) {}
 
 vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
@@ -73,28 +73,21 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		return result;
 	}
 
-	/*int *prev = new int[grid->GetNumberOfPoints()];
-	int *cost = new int[grid->GetNumberOfPoints()];*/
 	int next = 0;
 	double gValue = 0;
 	double fValue = 0;
-	std::set<Node&> closed;
+	std::unordered_map<vtkIdType, Node> closed;
+
 	auto cmp = [](const Node *n1, const Node *n2) {return (n1->cost > n2->cost); };
 	std::priority_queue<const Node*, std::vector<Node*>, decltype(cmp)> idq(cmp);
 
-	/*for (int i = 0; i < grid->GetNumberOfPoints(); i++)
-	{
-		prev[i] = -1;
-		cost = 0;
-	}*/
-
 	Node* current = NULL;
-	idq.emplace(new Node(start, Heuristic(grid, start, end)));
+	idq.emplace(start, NULL, Heuristic(grid, start, end));
 	while (!idq.empty())
 	{
 		current = idq.top();
 		idq.pop();
-		closed.emplace(current);
+		closed.emplace(current->id, current);
 		if (current->id == end)
 			break;
 
@@ -105,21 +98,14 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		//добавление в очередь точек, смежных с текущей
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
-			if 
 			next = cellPointIds->GetId(j);
-			gValue = cost[next] + 1;
-			fValue = gValue + Heuristic(grid, current->cost, end);
-
-			////пропуск рассомтренных вершин или неперспективных 
-			//if (prev[next] > -1 && tenativeScore > cost[next])
-			//	continue;
-
-			if (prev[next] == -1 || fValue < cost[next])
+			gValue = current->cost + 1;
+			auto tmp = closed.find(next);
+			if (tmp == closed.end() || gValue < closed[next].cost)
 			{
-				prev[next] = current->id;
-				cost[next] = fValue;
-				idq.emplace(new Node(next, fValue));
+				fValue = gValue + Heuristic(grid, current->id, end);
 			}
+			
 		}
 	}
 }

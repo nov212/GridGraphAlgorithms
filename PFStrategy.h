@@ -17,6 +17,8 @@ class PFStrategy
 {
 public:
 	virtual vtkSmartPointer<vtkIdList> Solve( Graph *grid, vtkIdType start, vtkIdType end)=0;
+protected:
+	vtkSmartPointer<vtkIdList> BuildPath(int *prev, int start, int end);
 };
 
 class BFS :public PFStrategy
@@ -33,9 +35,9 @@ private:
 	struct Node
 	{
 		vtkIdType id;
-		vtkIdType prev;
+		Node* prev;
 		double cost;
-		Node(vtkIdType _id, vtkIdType _prev=-1, double _cost=0);
+		Node(vtkIdType _id, Node *prev=NULL, double _cost=0);
 	};
 	double Heuristic(Graph *grid, vtkIdType start, vtkIdType target);
 };

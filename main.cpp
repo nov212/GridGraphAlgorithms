@@ -2,7 +2,10 @@
 
 int main(int argc, char **argv)
 {
-	vtkSmartPointer<vtkUnstructuredGrid> start = vtkUnstructuredGrid::New();
+
+	vtkSmartPointer<vtkUnstructuredGrid> start1 = loadUnstructuredGrid("D:/tmp/mygrid1.vtu");
+	convertUnstructuredToPolyData(start1);
+	vtkSmartPointer<vtkUnstructuredGrid> start = vtkSmartPointer <vtkUnstructuredGrid>::New();
 	vtkSmartPointer<vtkPoints> startPoints = vtkSmartPointer<vtkPoints>::New();
 	startPoints->InsertNextPoint(0, 0, 0);
 	startPoints->InsertNextPoint(0, 10, 0);
@@ -55,8 +58,10 @@ int main(int argc, char **argv)
 	//список €чеек, в которые входит точка
 	vtkIdType id = 3;
 	vtkSmartPointer<vtkIdList> neighbourCells = vtkSmartPointer<vtkIdList>::New();
-	start->GetPointCells(id, neighbourCells);
-
+	vtkSmartPointer<vtkIdList> nc = vtkSmartPointer<vtkIdList> ::New();
+	start->GetPointCells(id, nc);
+	start->Update();
+	std::cout << start->GetNumberOfCells();
 
 	for (vtkIdType i = 0; i < neighbourCells->GetNumberOfIds(); i++)
 	{
@@ -72,8 +77,6 @@ int main(int argc, char **argv)
 		}
 
 		vtkSmartPointer<vtkPolyData> sg = vtkSmartPointer<vtkPolyData>::New();
-		sg->
 	}
-
     return 0;
 }

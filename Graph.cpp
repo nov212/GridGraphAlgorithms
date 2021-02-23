@@ -1,11 +1,9 @@
 #include "Graph.h"
 #include <vtkSmartPointer.h>
 
-Graph::Graph(vtkPoints *points, vtkCellArray *cells)
+Graph::Graph(vtkUnstructuredGrid *grid)
 {
-	grid = vtkUnstructuredGrid::New();
-	grid->SetPoints(points);
-	grid->SetCells(cells);
+	this->grid = grid;
 }
 
 vtkPoints* Graph::GetPoints()

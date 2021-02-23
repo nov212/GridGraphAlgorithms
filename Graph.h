@@ -9,7 +9,7 @@ class Graph
 private:
 	vtkUnstructuredGrid *grid;
 public:
-	Graph(vtkPoints *points, vtkCellArray *cells);
+	Graph(vtkUnstructuredGrid *grid);
 	vtkPoints * GetPoints();
 	vtkCellArray * GetCells();
 	void GetAdj(vtkIdType node, vtkIdList *neighbours);
