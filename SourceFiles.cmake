@@ -8,6 +8,5 @@ set ( SOURCE_FILES
 set ( HEADER_FILES
 	./vtkExample.h
 	./PFStrategy.h
-	./PriorityQueue.h
 	./Graph.h
 )

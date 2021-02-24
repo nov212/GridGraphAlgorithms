@@ -37,7 +37,8 @@ private:
 		vtkIdType id;
 		Node* prev;
 		double cost;
-		Node(vtkIdType _id, Node *prev=NULL, double _cost=0);
+		double priority;
+		Node(vtkIdType _id, Node *_prev=NULL, double _cost=0, double _priority=std::numeric_limits<double>::max());
 	};
 	double Heuristic(Graph *grid, vtkIdType start, vtkIdType target);
 };

@@ -1,7 +1,12 @@
 #include "vtkExample.h"
+#include <unordered_map>
 
 int main(int argc, char **argv)
 {
+	std::unordered_map<int, int> map;
+	map.emplace(0, 1);
+	map.emplace(0, 2);
+	std::cout << map.at(0);
 
 	vtkSmartPointer<vtkUnstructuredGrid> start1 = loadUnstructuredGrid("D:/tmp/mygrid1.vtu");
 	convertUnstructuredToPolyData(start1);

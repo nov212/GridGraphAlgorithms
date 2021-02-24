@@ -1,7 +1,6 @@
 #include "PFStrategy.h"
 #include <queue>
 #include <unordered_map>
-#include "PriorityQueue.h"
 #include <cmath>
 
 vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
@@ -62,7 +61,8 @@ vtkSmartPointer<vtkIdList> BFS::Solve( Graph *grid, vtkIdType start, vtkIdType e
 	return BuildPath(prev, start, end);
 }
 
-AStar::Node::Node(vtkIdType _id, Node *_prev, double _cost) :id(_id), prev(_prev), cost(_cost) {}
+AStar::Node::Node(vtkIdType _id, Node *_prev, double _cost, double _priority) :id(_id), prev(_prev), cost(_cost), 
+priority(_priority) {}
 
 vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
@@ -78,36 +78,52 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	double fValue = 0;
 	std::unordered_map<vtkIdType, Node> closed;
 
-	auto cmp = [](const Node *n1, const Node *n2) {return (n1->cost > n2->cost); };
-	std::priority_queue<const Node*, std::vector<Node*>, decltype(cmp)> idq(cmp);
+	auto cmp = [](const Node& n1, const Node& n2) {return (n1.priority > n2.priority); };
+	std::priority_queue< Node, std::vector<Node>, decltype(cmp)> idq(cmp);
 
-	Node* current = NULL;
-	idq.emplace(start, NULL, Heuristic(grid, start, end));
+	idq.push(Node(start, NULL, 0, Heuristic(grid, start, end)));
+	Node current=idq.top();
+
 	while (!idq.empty())
 	{
 		current = idq.top();
 		idq.pop();
-		closed.emplace(current->id, current);
-		if (current->id == end)
+		closed.emplace(current.id, current);
+		if (current.id == end)
 			break;
 
 		//соседи текущей вершины
 		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
-		grid->GetAdj(current->id, cellPointIds);
+		grid->GetAdj(current.id, cellPointIds);
 
 		//добавление в очередь точек, смежных с текущей
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
 			next = cellPointIds->GetId(j);
-			gValue = current->cost + 1;
+			gValue = current.cost + 1;
 			auto tmp = closed.find(next);
-			if (tmp == closed.end() || gValue < closed[next].cost)
+			if (tmp == closed.end() || gValue < (tmp->second).cost)
 			{
-				fValue = gValue + Heuristic(grid, current->id, end);
+				fValue = gValue + Heuristic(grid, current.id, end);
+				idq.push(Node(next, &current, gValue, fValue));
 			}
 			
 		}
 	}
+
+	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+	auto target = closed.find(end);
+	if (target!=closed.end())
+	{
+		Node curr = target->second;
+		while (curr.id != start)
+		{
+			result->InsertNextId(curr.id);
+			curr = *(curr.prev);
+		}
+		result->InsertNextId(curr.id);
+	}
+	return result;
 }
 
 double AStar::Heuristic(Graph *grid, vtkIdType start, vtkIdType target)
