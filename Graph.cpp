@@ -1,5 +1,6 @@
 #include "Graph.h"
 #include <vtkSmartPointer.h>
+#include <set>
 
 Graph::Graph(vtkUnstructuredGrid *grid)
 {
@@ -33,6 +34,7 @@ void Graph::GetPoint(vtkIdType id, double x[3])
 
 void Graph::GetAdj(vtkIdType node, vtkIdList *neighbours)
 {
+	std::set<vtkIdType> visited;
 	//получение €чеек, в которые входит точка
 	vtkSmartPointer<vtkIdList> cellIdList = vtkSmartPointer<vtkIdList>::New();
 	grid->GetPointCells(node, cellIdList);
@@ -53,13 +55,23 @@ void Graph::GetAdj(vtkIdType node, vtkIdList *neighbours)
 			{
 				if (pointIdList->GetId(0) == node)
 				{
-					neighbours->InsertNextId(pointIdList->GetId(1));
+					if (visited.find(pointIdList->GetId(1)) == visited.end())
+					{
+						neighbours->InsertNextId(pointIdList->GetId(1));
+						visited.insert(pointIdList->GetId(1));
+					}
 				}
 				else
 				{
-					neighbours->InsertNextId(pointIdList->GetId(0));
+					if (visited.find(pointIdList->GetId(0)) == visited.end())
+					{
+						neighbours->InsertNextId(pointIdList->GetId(0));
+						visited.insert(pointIdList->GetId(0));
+					}
 				}
 			}
 		}
 	}
 }
+
+

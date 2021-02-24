@@ -9,7 +9,7 @@ vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
 	if (prev[end] > -1)
 	{
 		int current = end;
-		while (prev[current] != -1)
+		while (current != start)
 		{
 			result->InsertNextId(current);
 			current = prev[current];
@@ -19,7 +19,7 @@ vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
 	return result;
 }
 
-vtkSmartPointer<vtkIdList> BFS::Solve( Graph *grid, vtkIdType start, vtkIdType end)
+vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
 	{
@@ -34,6 +34,7 @@ vtkSmartPointer<vtkIdList> BFS::Solve( Graph *grid, vtkIdType start, vtkIdType e
 		prev[i] = -1;
 
 	idq.push(start);
+	prev[start] = start;
 	vtkIdType current = start;
 	while (!idq.empty())
 	{
@@ -162,6 +163,8 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 	bool solved = false;
 	label[start] = 'F';
 	label[end] ='B';
+	prev[start] = start;
+	prev[end] = end;
 	idq.push(start);
 	idq.push(end);
 	while (!idq.empty())
@@ -191,8 +194,7 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 					solved = true;
 					break;
 				}
-		}
-		
+		}		
 		if (solved)
 			break;
 	}
@@ -204,13 +206,14 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 		int prevVert = oncoming;
 		int currVert = intersec;
 
-		while (currVert != -1)
+		while (currVert != end)
 		{
 			nextVert = prev[currVert];
 			prev[currVert] = prevVert;
 			prevVert = currVert;
 			currVert = nextVert;
 		}
+		prev[end] = prevVert;
 	}
 	return BuildPath(prev, start, end);
 }

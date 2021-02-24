@@ -16,7 +16,7 @@
 class PFStrategy
 {
 public:
-	virtual vtkSmartPointer<vtkIdList> Solve( Graph *grid, vtkIdType start, vtkIdType end)=0;
+	virtual vtkSmartPointer<vtkIdList> Solve(Graph *grid, vtkIdType start, vtkIdType end)=0;
 protected:
 	vtkSmartPointer<vtkIdList> BuildPath(int *prev, int start, int end);
 };
