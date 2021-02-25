@@ -77,36 +77,38 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	int next = 0;
 	double gValue = 0;
 	double fValue = 0;
-	std::unordered_map<vtkIdType, Node> closed;
 
-	auto cmp = [](const Node& n1, const Node& n2) {return (n1.priority > n2.priority); };
-	std::priority_queue< Node, std::vector<Node>, decltype(cmp)> idq(cmp);
+	std::unordered_map<vtkIdType, Node*> closed; //рассмотренные вершины
 
-	idq.push(Node(start, NULL, 0, Heuristic(grid, start, end)));
-	Node current=idq.top();
+	//очередь с приоритетами, первым будет элемент с наименьшим приоритетом
+	auto cmp = [](const Node* n1, const Node* n2) {return (n1->priority > n2->priority); };
+	std::priority_queue< Node*, std::vector<Node*>, decltype(cmp)> idq(cmp);
 
+	idq.push(new Node(start, NULL, 0, Heuristic(grid, start, end)));
+
+	Node* current = idq.top();
 	while (!idq.empty())
 	{
 		current = idq.top();
 		idq.pop();
-		closed.emplace(current.id, current);
-		if (current.id == end)
+		closed.emplace(current->id, current);
+		if (current->id == end)
 			break;
 
 		//соседи текущей вершины
 		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
-		grid->GetAdj(current.id, cellPointIds);
+		grid->GetAdj(current->id, cellPointIds);
 
 		//добавление в очередь точек, смежных с текущей
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
 			next = cellPointIds->GetId(j);
-			gValue = current.cost + 1;
+			gValue = current->cost + 1;
 			auto tmp = closed.find(next);
-			if (tmp == closed.end() || gValue < (tmp->second).cost)
+			if (tmp == closed.end() || gValue < (tmp->second)->cost)
 			{
-				fValue = gValue + Heuristic(grid, current.id, end);
-				idq.push(Node(next, &current, gValue, fValue));
+				fValue = gValue + Heuristic(grid, next, end);
+				idq.push(new Node(next, current, gValue, fValue));
 			}
 			
 		}
@@ -116,13 +118,13 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	auto target = closed.find(end);
 	if (target!=closed.end())
 	{
-		Node curr = target->second;
-		while (curr.id != start)
+		Node* curr = target->second;
+		while (curr->id != start)
 		{
-			result->InsertNextId(curr.id);
-			curr = *(curr.prev);
+			result->InsertNextId(curr->id);
+			curr = curr->prev;
 		}
-		result->InsertNextId(curr.id);
+		result->InsertNextId(curr->id);
 	}
 	return result;
 }
@@ -217,5 +219,3 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 	}
 	return BuildPath(prev, start, end);
 }
-
-

@@ -8,31 +8,31 @@ int main(int argc, char **argv)
 {
 	vtkSmartPointer<vtkUnstructuredGrid> start = vtkUnstructuredGrid::New();
 	vtkSmartPointer<vtkPoints> startPoints = vtkSmartPointer<vtkPoints>::New();
-	startPoints->InsertNextPoint(0, 0, 0);
-	startPoints->InsertNextPoint(0, 10, 0);
-	startPoints->InsertNextPoint(0, 20, 0);
-	startPoints->InsertNextPoint(0, 30, 0);
-	startPoints->InsertNextPoint(10, 0, 0);
-	startPoints->InsertNextPoint(10, 10, 0);
-	startPoints->InsertNextPoint(10, 20, 0);
-	startPoints->InsertNextPoint(10, 30, 0);
-	startPoints->InsertNextPoint(20, 0, 0);
-	startPoints->InsertNextPoint(20, 10, 0);
-	startPoints->InsertNextPoint(20, 20, 0);
-	startPoints->InsertNextPoint(20, 30, 0); // 'Это точки для нижней части сетки (start)
+	startPoints->InsertNextPoint(0, 0, 0); //0
+	startPoints->InsertNextPoint(0, 10, 0);//1
+	startPoints->InsertNextPoint(0, 20, 0);//2
+	startPoints->InsertNextPoint(0, 30, 0);//3
+	startPoints->InsertNextPoint(10, 0, 0);//4
+	startPoints->InsertNextPoint(10, 10, 0);//5
+	startPoints->InsertNextPoint(10, 20, 0);//6
+	startPoints->InsertNextPoint(10, 30, 0);//7
+	startPoints->InsertNextPoint(20, 0, 0); //8
+	startPoints->InsertNextPoint(20, 10, 0);//9
+	startPoints->InsertNextPoint(20, 20, 0);//10
+	startPoints->InsertNextPoint(20, 30, 0); //11 'Это точки для нижней части сетки (start)
 
-	startPoints->InsertNextPoint(0, 0, 50);
-	startPoints->InsertNextPoint(0, 10, 50);
-	startPoints->InsertNextPoint(0, 20, 50);
-	startPoints->InsertNextPoint(0, 30, 50);
-	startPoints->InsertNextPoint(10, 0, 50);
-	startPoints->InsertNextPoint(10, 10, 50);
-	startPoints->InsertNextPoint(10, 20, 50);
-	startPoints->InsertNextPoint(10, 30, 50);
-	startPoints->InsertNextPoint(20, 0, 50);
-	startPoints->InsertNextPoint(20, 10, 50);
-	startPoints->InsertNextPoint(20, 20, 50);
-	startPoints->InsertNextPoint(20, 30, 50); // 'Это точки для верхней части сетки (finish)
+	startPoints->InsertNextPoint(0, 0, 50);//12
+	startPoints->InsertNextPoint(0, 10, 50);//13
+	startPoints->InsertNextPoint(0, 20, 50);//14
+	startPoints->InsertNextPoint(0, 30, 50); //15
+	startPoints->InsertNextPoint(10, 0, 50);//16
+	startPoints->InsertNextPoint(10, 10, 50);//17
+	startPoints->InsertNextPoint(10, 20, 50);//18
+	startPoints->InsertNextPoint(10, 30, 50);//19
+	startPoints->InsertNextPoint(20, 0, 50);//20
+	startPoints->InsertNextPoint(20, 10, 50);//21
+	startPoints->InsertNextPoint(20, 20, 50);//22
+	startPoints->InsertNextPoint(20, 30, 50); //23 'Это точки для верхней части сетки (finish)
 	start->SetPoints(startPoints);
 	vtkSmartPointer<vtkIdList> sCell0 = vtkSmartPointer<vtkIdList>::New();
 	sCell0->InsertNextId(0);
@@ -178,30 +178,36 @@ int main(int argc, char **argv)
 	sCell21->InsertNextId(4);
 	start->InsertNextCell(VTK_QUAD, sCell21);
 
-	double point[3];
-	//список ячеек, в которые входит точка
-	vtkIdType id = 3;
-	vtkSmartPointer<vtkIdList> neighbourCells = vtkSmartPointer<vtkIdList>::New();
-	vtkSmartPointer<vtkIdList> nc = vtkSmartPointer<vtkIdList> ::New();
-	start->GetPointCells(id, nc);
+//vtkSmartPointer<vtkIdList> cell = vtkSmartPointer<vtkIdList>::New();
+//start->GetCellPoints(2, cell);
+//for (vtkIdType i = 0; i < cell->GetNumberOfIds(); i++)
+//	std::cout << cell->GetId(i)<<' ';
+//std::cout<<std::endl;
 
-	std::cout << start->GetNumberOfCells()<<std::endl;
+	//double point[3];
+	////список ячеек, в которые входит точка
+	//vtkIdType id = 3;
+	////vtkSmartPointer<vtkIdList> neighbourCells = vtkSmartPointer<vtkIdList>::New();
+	////vtkSmartPointer<vtkIdList> nc = vtkSmartPointer<vtkIdList> ::New();
+	////start->GetPointCells(id, nc);
+
+	//std::cout<<"Number of cells " << start->GetNumberOfCells()<<std::endl;
 	Graph g(start);
-	vtkSmartPointer<vtkIdList> neighbours = vtkSmartPointer<vtkIdList>::New();
-	g.GetAdj(23, neighbours);
+	/*vtkSmartPointer<vtkIdList> neighbours = vtkSmartPointer<vtkIdList>::New();
+	g.GetAdj(2, neighbours);
 	std::cout << neighbours->GetNumberOfIds()<<std::endl;
 
 	for (vtkIdType i = 0; i < neighbours->GetNumberOfIds(); i++)
 	{
 		std::cout << neighbours->GetId(i) << ' ';
-	}
-	std::cout << std::endl;
-	std::cout << g.GetNumberOfPoints() << ' '<<std::endl;
+	}*/
+	//std::cout << std::endl;
+	//std::cout << g.GetNumberOfPoints() << ' '<<std::endl;
 
 	AStar astar;
 	BiDirectional bidir;
 	Solver s;
-	s.SetStrategy(bidir);
+	s.SetStrategy(astar);
 	vtkSmartPointer<vtkIdList> solution=s.Solve(&g, 8, 15);
 	for (vtkIdType i = 0; i < solution->GetNumberOfIds(); i++)
 	{
