@@ -2,7 +2,7 @@
 #include <vtkSmartPointer.h>
 #include <set>
 
-Graph::Graph(vtkUnstructuredGrid *grid)
+Graph::Graph(vtkSmartPointer<vtkUnstructuredGrid> grid)
 {
 	this->grid = grid;
 }
@@ -74,4 +74,11 @@ void Graph::GetAdj(vtkIdType node, vtkIdList *neighbours)
 	}
 }
 
+void Graph::LoadFile(const char* path)
+{
+	vtkSmartPointer<vtkUnstructuredGridReader> reader = vtkSmartPointer<vtkUnstructuredGridReader>::New();
+	reader->SetFileName(path);
+	reader->Update();
+	grid = reader->GetOutput();
+}
 

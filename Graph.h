@@ -3,17 +3,20 @@
 #include <vtkIdList.h>
 #include <vtkPoints.h>
 #include <vtkCellArray.h>
+#include <vtkSmartPointer.h>
+#include <vtkUnstructuredGridReader.h>
 
 class Graph
 {
 private:
-	vtkUnstructuredGrid *grid;
+	vtkSmartPointer<vtkUnstructuredGrid> grid;
 public:
-	Graph(vtkUnstructuredGrid *grid);
+	Graph(vtkSmartPointer<vtkUnstructuredGrid> grid);
 	vtkPoints * GetPoints();
 	vtkCellArray * GetCells();
 	void GetAdj(vtkIdType node, vtkIdList *neighbours);
 	vtkIdType GetNumberOfPoints();
 	vtkIdType GetNumberOfCells();
 	void GetPoint(vtkIdType id, double x[3]);
+	void LoadFile(const char* path);
 };
