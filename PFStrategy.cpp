@@ -1,7 +1,9 @@
 #include "PFStrategy.h"
 #include <queue>
 #include <unordered_map>
+#include <set>
 #include <cmath>
+#include <map>
 
 vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
 {
@@ -80,18 +82,19 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 
 	std::unordered_map<vtkIdType, Node*> closed; //рассмотренные вершины
 
-	//очередь с приоритетами, первым будет элемент с наименьшим приоритетом
-	auto cmp = [](const Node* n1, const Node* n2) {return (n1->priority > n2->priority); };
-	std::priority_queue< Node*, std::vector<Node*>, decltype(cmp)> idq(cmp);
+	//очередь с приоритетами, каждый элемент это пара:
+	//	первый элемент-приоритет узла
+	//	второй элемент-узел
+	//элементы выстроены по убыванию приоритета
+	std::set<std::pair<double, Node*>> idq;
+	idq.insert(std::make_pair(Heuristic(grid, start, end), new Node(start, NULL, 0, Heuristic(grid, start, end))));
 
-	idq.push(new Node(start, NULL, 0, Heuristic(grid, start, end)));
-
-	Node* current = idq.top();
+	//Node* current = idq.begin()->second;
 	while (!idq.empty())
 	{
-		current = idq.top();
+		Node* current = idq.begin()->second;
 		std::cout << "current=" << current->id << " priority=" << fValue << std::endl;
-		idq.pop();
+		idq.erase(idq.begin());
 		closed.emplace(current->id, current);
 		if (current->id == end)
 			break;
@@ -105,11 +108,22 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		{
 			next = cellPointIds->GetId(j);
 			gValue = current->cost + 1;
+		    fValue = gValue + Heuristic(grid, next, end);
+
 			auto tmp = closed.find(next);
-			if (tmp == closed.end() || gValue < (tmp->second)->cost)
+			if (tmp != closed.end())
+				continue;
+
+			//auto exist= idq.find(std::make_pair((tmp->second)->priority, tmp->second));
+			auto exist = idq.find(std::make_pair((tmp->second)->priority, tmp->second));
+			if (exist == idq.end() || fValue < exist->first)
 			{
-				fValue = gValue + Heuristic(grid, next, end);
-				idq.push(new Node(next, current, gValue, fValue));
+				if (exist != idq.end())
+				{
+					idq.erase(std::make_pair(exist->first, tmp->second));
+					std::cout << "EREASE-------------------" << std::endl;
+				}
+				idq.insert(std::make_pair(fValue, new Node(next, current, gValue, fValue)));
 				std::cout << "PUSHED next="<<next << " current="<<current->id << " priority="<<fValue<<std::endl;
 			}
 			

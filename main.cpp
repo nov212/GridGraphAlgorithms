@@ -247,7 +247,26 @@ int main(int argc, char **argv)
 	//std::cout << std::endl;
 	//std::cout << g.GetNumberOfPoints() << ' '<<std::endl;
 
-Test();
+//Test();
+
+//std::set<std::pair<int, int>> idq;
+//idq.insert(std::make_pair(0, 1));
+//idq.insert(std::make_pair(7, 2));
+//idq.insert(std::make_pair(2, 3));
+//while (!idq.empty())
+//{
+//	std::cout << idq.begin()->first << ' ' << idq.begin()->second << std::endl;
+//	idq.erase(idq.begin());
+//}
+std::unordered_map<int, int, std::hash<int>, std::less<int>> map;
+map.insert({ 0,1 });
+map.insert({ 7, 2 });
+map.insert({2, 3});
+while (!map.empty())
+{
+	std::cout << map.begin()->first << ' ' << map.begin()->second << std::endl;
+	map.erase(map.begin());
+}
     return 0;
 }
 
