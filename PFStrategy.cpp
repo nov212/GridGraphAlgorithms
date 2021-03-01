@@ -90,7 +90,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	while (!idq.empty())
 	{
 		current = idq.top();
-		//std::cout << "current=" << current->id << " priority=" << fValue << std::endl;
+		std::cout << "current=" << current->id << " priority=" << fValue << std::endl;
 		idq.pop();
 		closed.emplace(current->id, current);
 		if (current->id == end)
@@ -110,8 +110,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 			{
 				fValue = gValue + Heuristic(grid, next, end);
 				idq.push(new Node(next, current, gValue, fValue));
-				closed.emplace(next, new Node(next, current, gValue, fValue));
-				//std::cout << "PUSHED next="<<next << " current="<<current->id << " priority="<<fValue<<std::endl;
+				std::cout << "PUSHED next="<<next << " current="<<current->id << " priority="<<fValue<<std::endl;
 			}
 			
 		}
