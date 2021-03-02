@@ -19,6 +19,7 @@ public:
 	virtual vtkSmartPointer<vtkIdList> Solve(Graph *grid, vtkIdType start, vtkIdType end)=0;
 protected:
 	vtkSmartPointer<vtkIdList> BuildPath(int *prev, int start, int end);
+	vtkSmartPointer<vtkIdList> OveVertexPath(vtkIdType vert);
 };
 
 class BFS :public PFStrategy
@@ -47,4 +48,6 @@ class BiDirectional:public PFStrategy
 {
 public:
 	vtkSmartPointer<vtkIdList> Solve(Graph *grid, vtkIdType start, vtkIdType end) override;
+private:
+	vtkSmartPointer<vtkIdList> Merge(vtkSmartPointer<vtkIdList> firstHalf, vtkSmartPointer<vtkIdList> secondHalf);
 };

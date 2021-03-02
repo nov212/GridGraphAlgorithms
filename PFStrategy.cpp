@@ -7,6 +7,8 @@
 
 vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
 {
+	if (start==end)
+		return OveVertexPath(start);
 	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
 	if (prev[end] > -1)
 	{
@@ -21,14 +23,17 @@ vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
 	return result;
 }
 
+vtkSmartPointer<vtkIdList> PFStrategy::OveVertexPath(vtkIdType vert)
+{
+	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+	result->InsertNextId(vert);
+	return result;
+}
+
 vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
-	{
-		vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
-		result->InsertNextId(start);
-		return result;
-	}
+		return OveVertexPath(start);
 
 	int* prev = new int[grid->GetNumberOfPoints()]; //массив предыдущих элементов
 	std::queue<int> idq;
@@ -36,7 +41,6 @@ vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType en
 		prev[i] = -1;
 
 	idq.push(start);
-	prev[start] = start;
 	vtkIdType current = start;
 	while (!idq.empty())
 	{
@@ -70,11 +74,7 @@ priority(_priority) {}
 vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
-	{
-		vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
-		result->InsertNextId(start);
-		return result;
-	}
+		return OveVertexPath(start);
 
 	int next = 0;
 	double gValue = 0;
@@ -85,16 +85,17 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	//очередь с приоритетами, каждый элемент это пара:
 	//	первый элемент-приоритет узла
 	//	второй элемент-узел
-	//элементы выстроены по убыванию приоритета
-	std::set<std::pair<double, Node*>> idq;
-	idq.insert(std::make_pair(Heuristic(grid, start, end), new Node(start, NULL, 0, Heuristic(grid, start, end))));
 
-	//Node* current = idq.begin()->second;
+	//элементы выстроены по убыванию приоритета
+	auto cmp = [](const Node* n1, const Node* n2) {return n1->priority > n2->priority; };
+	std::priority_queue<Node*, std::vector<Node*>, decltype(cmp)> idq(cmp);
+
+	idq.emplace(new Node(start, NULL, 0, Heuristic(grid, start, end)));
+	Node* current = idq.top();
 	while (!idq.empty())
 	{
-		Node* current = idq.begin()->second;
-		std::cout << "current=" << current->id << " priority=" << fValue << std::endl;
-		idq.erase(idq.begin());
+		current = idq.top();
+		idq.pop();
 		closed.emplace(current->id, current);
 		if (current->id == end)
 			break;
@@ -108,25 +109,13 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		{
 			next = cellPointIds->GetId(j);
 			gValue = current->cost + 1;
-		    fValue = gValue + Heuristic(grid, next, end);
+		    fValue = Heuristic(grid, next, end);
 
+			//пропускаем рассмотренные вершины
 			auto tmp = closed.find(next);
 			if (tmp != closed.end())
 				continue;
-
-			//auto exist= idq.find(std::make_pair((tmp->second)->priority, tmp->second));
-			auto exist = idq.find(std::make_pair((tmp->second)->priority, tmp->second));
-			if (exist == idq.end() || fValue < exist->first)
-			{
-				if (exist != idq.end())
-				{
-					idq.erase(std::make_pair(exist->first, tmp->second));
-					std::cout << "EREASE-------------------" << std::endl;
-				}
-				idq.insert(std::make_pair(fValue, new Node(next, current, gValue, fValue)));
-				std::cout << "PUSHED next="<<next << " current="<<current->id << " priority="<<fValue<<std::endl;
-			}
-			
+			idq.emplace(new Node(next, current, gValue, fValue));
 		}
 	}
 
@@ -158,31 +147,32 @@ double AStar::Heuristic(Graph *grid, vtkIdType start, vtkIdType target)
 vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
-	{
-		vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
-		result->InsertNextId(start);
-		return result;
-	}
+		return OveVertexPath(start);
+	
+
 	int* prev = new int[grid->GetNumberOfPoints()]; //массив предыдущих элементов
 	//метка для вершин:
 	//	N - вершина не помечена
 	//  F - вершина помечена в прямом направлении
 	//	B - вершина помечена встречным направлением
+	const char FRONT = 'F';
+	const char BACK = 'B';
+	const char NONE = 'N';
+
 	char* label= new char[grid->GetNumberOfPoints()]; 
 	std::queue<int> idq;
 	for (vtkIdType i = 0; i < grid->GetNumberOfPoints(); i++)
 	{
 		prev[i] = -1;
-		label[i] = 'N';
+		label[i] = NONE;
 	}
 	vtkIdType current = start;
 	vtkIdType intersec = end; //точка пересечения
 	vtkIdType oncoming = start; //вершина, у которой сосед принадлежит пересечению
 	bool solved = false;
-	label[start] = 'F';
-	label[end] ='B';
-	prev[start] = start;
-	prev[end] = end;
+	label[start] = FRONT;
+	label[end] =BACK;
+
 	idq.push(start);
 	idq.push(end);
 	while (!idq.empty())
@@ -198,7 +188,7 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
 			int next = cellPointIds->GetId(j);
-			if (label[next] == 'N')
+			if (label[next] == NONE)
 			{
 				idq.push(next);
 				label[next] = label[current];
@@ -217,21 +207,33 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 			break;
 	}
 
+	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
 	if (solved)
 	{
-		//соединение двух путей в месте пересечения
-		int nextVert = prev[intersec];
-		int prevVert = oncoming;
-		int currVert = intersec;
-
-		while (currVert != end)
+		vtkSmartPointer<vtkIdList> firstHalf = vtkSmartPointer<vtkIdList>::New();
+		vtkSmartPointer<vtkIdList> secondHalf = vtkSmartPointer<vtkIdList>::New();
+		if (label[intersec] == FRONT)
 		{
-			nextVert = prev[currVert];
-			prev[currVert] = prevVert;
-			prevVert = currVert;
-			currVert = nextVert;
+			firstHalf = BuildPath(prev, start, intersec);
+			secondHalf = BuildPath(prev, end, oncoming);
 		}
-		prev[end] = prevVert;
+		if (label[intersec] == BACK)
+		{
+			firstHalf = BuildPath(prev, start, oncoming);
+			secondHalf = BuildPath(prev, end, intersec);
+		}
+		result = Merge(firstHalf, secondHalf);
 	}
-	return BuildPath(prev, start, end);
+	return result;
+}
+
+vtkSmartPointer<vtkIdList> BiDirectional::Merge(vtkSmartPointer<vtkIdList> firstHalf, vtkSmartPointer<vtkIdList> secondHalf)
+{
+	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+	for (vtkIdType i = secondHalf->GetNumberOfIds() - 1; i >= 0; --i)
+		result->InsertNextId(secondHalf->GetId(i));
+
+	for (vtkIdType i = 0; i < firstHalf->GetNumberOfIds(); ++i)
+		result->InsertNextId(firstHalf->GetId(i));
+	return result;
 }
