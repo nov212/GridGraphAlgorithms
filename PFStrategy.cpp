@@ -35,7 +35,7 @@ vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType en
 	if (start == end)
 		return OneVertexPath(start);
 
-	int* prev = new int[grid->GetNumberOfPoints()]; //массив предыдущих элементов
+	int* prev = new int[grid->GetNumberOfPoints()]; //previous elements
 	std::queue<int> idq;
 	for (vtkIdType i = 0; i < grid->GetNumberOfPoints(); i++)
 		prev[i] = -1;
@@ -49,11 +49,11 @@ vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType en
 		if (current == end)
 			break;
 
-		//соседи текущей вершины
+		//neighbours of current vertex
 		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
 		grid->GetAdj(current, cellPointIds);
 
-		//добавление в очередь точек, смежных с текущей
+		//pushing vertices adjacent to current
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
 			int next = cellPointIds->GetId(j);
@@ -80,13 +80,8 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	double gValue = 0;
 	double fValue = 0;
 
-	std::unordered_map<vtkIdType, Node*> closed; //рассмотренные вершины
+	std::unordered_map<vtkIdType, Node*> closed; //visited vertices
 
-	//очередь с приоритетами, каждый элемент это пара:
-	//	первый элемент-приоритет узла
-	//	второй элемент-узел
-
-	//элементы выстроены по убыванию приоритета
 	auto cmp = [](const Node* n1, const Node* n2) {return n1->priority > n2->priority; };
 	std::priority_queue<Node*, std::vector<Node*>, decltype(cmp)> idq(cmp);
 
@@ -100,18 +95,18 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		if (current->id == end)
 			break;
 
-		//соседи текущей вершины
+		//neighbours of current vertex
 		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
 		grid->GetAdj(current->id, cellPointIds);
 
-		//добавление в очередь точек, смежных с текущей
+		//pushing vertices adjacent to current
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
 			next = cellPointIds->GetId(j);
 			gValue = current->cost + 1;
 		    fValue = Heuristic(grid, next, end);
 
-			//пропускаем рассмотренные вершины
+			//skip visited vertices
 			auto tmp = closed.find(next);
 			if (tmp != closed.end())
 				continue;
@@ -120,6 +115,8 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	}
 
 	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+
+	//building path
 	auto target = closed.find(end);
 	if (target!=closed.end())
 	{
@@ -150,11 +147,11 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 		return OneVertexPath(start);
 	
 
-	int* prev = new int[grid->GetNumberOfPoints()]; //массив предыдущих элементов
-	//метка для вершин:
-	//	N - вершина не помечена
-	//  F - вершина помечена в прямом направлении
-	//	B - вершина помечена встречным направлением
+	int* prev = new int[grid->GetNumberOfPoints()]; //previous elements
+	//labels:
+	//	N - vertex is not labeled
+	//  F - labeled by forward direction
+	//	B - labeled by backward direction
 	const char FRONT = 'F';
 	const char BACK = 'B';
 	const char NONE = 'N';
@@ -167,8 +164,8 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 		label[i] = NONE;
 	}
 	vtkIdType current = start;
-	vtkIdType intersec = end; //точка пересечения
-	vtkIdType oncoming = start; //вершина, у которой сосед принадлежит пересечению
+	vtkIdType intersec = end; //intersection vertex
+	vtkIdType oncoming = start; //vertex adjacent to intersec
 	bool solved = false;
 	label[start] = FRONT;
 	label[end] =BACK;
@@ -180,11 +177,11 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 		current = idq.front();
 		idq.pop();
 
-		//соседи текущей вершины
+		//neighbours of current vertex
 		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
 		grid->GetAdj(current, cellPointIds);
 
-		//добавление в очередь точек, смежных с текущей
+		//pushing vertices adjacent to current
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
 			int next = cellPointIds->GetId(j);
@@ -208,13 +205,18 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 	}
 
 	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+
+	//building path 
 	if (solved)
 	{
 		vtkSmartPointer<vtkIdList> firstHalf = vtkSmartPointer<vtkIdList>::New();
 		vtkSmartPointer<vtkIdList> secondHalf = vtkSmartPointer<vtkIdList>::New();
 		if (label[intersec] == FRONT)
 		{
+			//ids from start to intersec
 			firstHalf = BuildPath(prev, start, intersec);
+
+			//ids from end to oncoming
 			secondHalf = BuildPath(prev, end, oncoming);
 		}
 		if (label[intersec] == BACK)

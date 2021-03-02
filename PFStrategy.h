@@ -7,10 +7,10 @@
 #include <vtkIdTypeArray.h>
 #include <vtkCell.h>
 /*
-	PFStrategy-общий интерфейс для алгоритмов поиска:
-		BFS-поиск в ширину
-		AStar-алгоритм A*
-		BiDirectional-двунаправленный поиск в ширину
+	PFStrategy-interface for path finding algorithms:
+		BFS-breadth first search
+		AStar-A* algirithm
+		BiDirectional-bidirectional BFS
 */
 
 class PFStrategy
