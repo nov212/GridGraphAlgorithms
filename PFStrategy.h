@@ -19,7 +19,7 @@ public:
 	virtual vtkSmartPointer<vtkIdList> Solve(Graph *grid, vtkIdType start, vtkIdType end)=0;
 protected:
 	vtkSmartPointer<vtkIdList> BuildPath(int *prev, int start, int end);
-	vtkSmartPointer<vtkIdList> OveVertexPath(vtkIdType vert);
+	vtkSmartPointer<vtkIdList> OneVertexPath(vtkIdType vert);
 };
 
 class BFS :public PFStrategy

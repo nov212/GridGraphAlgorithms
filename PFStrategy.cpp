@@ -8,7 +8,7 @@
 vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
 {
 	if (start==end)
-		return OveVertexPath(start);
+		return OneVertexPath(start);
 	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
 	if (prev[end] > -1)
 	{
@@ -23,7 +23,7 @@ vtkSmartPointer<vtkIdList> PFStrategy::BuildPath(int *prev, int start, int end)
 	return result;
 }
 
-vtkSmartPointer<vtkIdList> PFStrategy::OveVertexPath(vtkIdType vert)
+vtkSmartPointer<vtkIdList> PFStrategy::OneVertexPath(vtkIdType vert)
 {
 	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
 	result->InsertNextId(vert);
@@ -33,7 +33,7 @@ vtkSmartPointer<vtkIdList> PFStrategy::OveVertexPath(vtkIdType vert)
 vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
-		return OveVertexPath(start);
+		return OneVertexPath(start);
 
 	int* prev = new int[grid->GetNumberOfPoints()]; //массив предыдущих элементов
 	std::queue<int> idq;
@@ -74,7 +74,7 @@ priority(_priority) {}
 vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
-		return OveVertexPath(start);
+		return OneVertexPath(start);
 
 	int next = 0;
 	double gValue = 0;
@@ -147,7 +147,7 @@ double AStar::Heuristic(Graph *grid, vtkIdType start, vtkIdType target)
 vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
-		return OveVertexPath(start);
+		return OneVertexPath(start);
 	
 
 	int* prev = new int[grid->GetNumberOfPoints()]; //массив предыдущих элементов
