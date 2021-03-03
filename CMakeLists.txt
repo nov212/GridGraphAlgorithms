@@ -46,6 +46,9 @@ include(SourceFiles.cmake)
 link_directories( ${VTK_LIBRARY_DIR} )
 include_directories( ${VTK_INCLUDE_DIR} ${VTK_INCLUDE_DIRS} )
 
+
 add_executable(vtkApp ${SOURCE_FILES} ${HEADER_FILES})
 target_link_libraries(vtkApp PRIVATE ${VTK_LIBRARIES})
 #message(INFO "VTK lib dir: ${VTK_LIBRARY_DIR}")
+
+

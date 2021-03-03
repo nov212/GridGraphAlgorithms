@@ -10,16 +10,19 @@
 #include <vtkXMLUnstructuredGridWriter.h>
 #include <vtkXMLUnstructuredGridReader.h>
 #include <queue>
+#include <chrono>
 
 
-vtkSmartPointer<vtkUnstructuredGrid> MakeHexahedron();
-vtkSmartPointer<vtkUnstructuredGrid> MakeHexahedronGrid();
-vtkSmartPointer<vtkUnstructuredGrid> MakePolyhedron();
-vtkSmartPointer<vtkUnstructuredGrid> ReadFile(const char* path);
-void TestOnPolyhedron();
-void TryToReadFile();
-void WriteFile(vtkSmartPointer<vtkUnstructuredGrid> grid, const char* path);
+vtkSmartPointer<vtkUnstructuredGrid> MakeHexahedronGrid();		//construct grid built from VTK_HEXAHEDRON cells
+vtkSmartPointer<vtkUnstructuredGrid> ReadFile(const char* path);	//read .vtu file
+void WriteFile(vtkSmartPointer<vtkUnstructuredGrid> grid, const char* path); //convert grid to .vtu file
+void Performance(PFStrategy &algorithm, Graph &g, vtkIdType start, vtkIdType finish); //print time and path length
 void Test();
+
+//simple tests on hexahedron grid
+void TestBFS();	
+void TestBiDir();	
+void TestAstar();
 
 
 
@@ -27,119 +30,6 @@ int main(int argc, char **argv)
 {
 	Test();
 	return 0;
-}
-
-
-vtkSmartPointer<vtkUnstructuredGrid> MakeHexahedron()
-{
-	// A regular hexagon (cube) with all faces square and three squares around
-	// each vertex is created below.
-
-	// Setup the coordinates of eight points
-	// (the two faces must be in counter clockwise
-	// order as viewed from the outside).
-
-	// As an exercise you can modify the coordinates of the points to create
-	// seven topologically distinct convex hexahedras.
-
-	int numberOfVertices = 8;
-
-	// Create the points
-	vtkSmartPointer<vtkPoints> points =
-		vtkSmartPointer<vtkPoints>::New();
-	points->InsertNextPoint(0.0, 0.0, 0.0);
-	points->InsertNextPoint(1.0, 0.0, 0.0);
-	points->InsertNextPoint(1.0, 1.0, 0.0);
-	points->InsertNextPoint(0.0, 1.0, 0.0);
-	points->InsertNextPoint(0.0, 0.0, 1.0);
-	points->InsertNextPoint(1.0, 0.0, 1.0);
-	points->InsertNextPoint(1.0, 1.0, 1.0);
-	points->InsertNextPoint(0.0, 1.0, 1.0);
-
-	// Create a hexahedron from the points
-	vtkSmartPointer<vtkHexahedron> hex =
-		vtkSmartPointer<vtkHexahedron>::New();
-	for (int i = 0; i < numberOfVertices; ++i)
-	{
-		hex->GetPointIds()->SetId(i, i);
-	}
-
-	// Add the points and hexahedron to an unstructured grid
-	vtkSmartPointer<vtkUnstructuredGrid> uGrid =
-		vtkSmartPointer<vtkUnstructuredGrid>::New();
-	uGrid->SetPoints(points);
-	uGrid->InsertNextCell(hex->GetCellType(), hex->GetPointIds());
-
-	return uGrid;
-}
-
-vtkSmartPointer<vtkUnstructuredGrid> MakePolyhedron()
-{
-
-	// Make a regular dodecahedron. It consists of twelve regular pentagonal
-	// faces with three faces meeting at each vertex.
-	int numberOfVertices = 20;
-	int numberOfFaces = 12;
-	int numberOfFaceVertices = 5;
-
-	vtkSmartPointer<vtkPoints> points =
-		vtkSmartPointer<vtkPoints>::New();
-	points->InsertNextPoint(1.21412, 0, 1.58931);
-	points->InsertNextPoint(0.375185, 1.1547, 1.58931);
-	points->InsertNextPoint(-0.982247, 0.713644, 1.58931);
-	points->InsertNextPoint(-0.982247, -0.713644, 1.58931);
-	points->InsertNextPoint(0.375185, -1.1547, 1.58931);
-	points->InsertNextPoint(1.96449, 0, 0.375185);
-	points->InsertNextPoint(0.607062, 1.86835, 0.375185);
-	points->InsertNextPoint(-1.58931, 1.1547, 0.375185);
-	points->InsertNextPoint(-1.58931, -1.1547, 0.375185);
-	points->InsertNextPoint(0.607062, -1.86835, 0.375185);
-	points->InsertNextPoint(1.58931, 1.1547, -0.375185);
-	points->InsertNextPoint(-0.607062, 1.86835, -0.375185);
-	points->InsertNextPoint(-1.96449, 0, -0.375185);
-	points->InsertNextPoint(-0.607062, -1.86835, -0.375185);
-	points->InsertNextPoint(1.58931, -1.1547, -0.375185);
-	points->InsertNextPoint(0.982247, 0.713644, -1.58931);
-	points->InsertNextPoint(-0.375185, 1.1547, -1.58931);
-	points->InsertNextPoint(-1.21412, 0, -1.58931);
-	points->InsertNextPoint(-0.375185, -1.1547, -1.58931);
-	points->InsertNextPoint(0.982247, -0.713644, -1.58931);
-
-	vtkIdType dodechedronPointsIds[20] =
-	{ 0,   1,  2,  3,  4,  5,  6,  7,  8,  9,
-	 10, 11, 12, 13, 14, 15, 16, 17, 18, 19 };
-
-
-	vtkIdType dodechedronFace[12][5] = {
-		{0, 1, 2, 3, 4},
-		{0, 5, 10, 6, 1},
-		{1, 6, 11, 7, 2},
-		{2, 7, 12, 8, 3},
-		{3, 8, 13, 9, 4},
-		{4, 9, 14, 5, 0},
-		{15, 10, 5, 14, 19},
-		{16, 11, 6, 10, 15},
-		{17, 12, 7, 11, 16},
-		{18, 13, 8, 12, 17},
-		{19, 14, 9, 13, 18},
-		{19, 18, 17, 16, 15}
-	};
-
-	vtkSmartPointer<vtkCellArray> dodechedronFaces =
-		vtkSmartPointer<vtkCellArray>::New();
-	for (int i = 0; i < numberOfFaces; i++)
-	{
-		dodechedronFaces->InsertNextCell(numberOfFaceVertices, dodechedronFace[i]);
-	}
-
-	vtkSmartPointer<vtkUnstructuredGrid> uGrid =
-		vtkSmartPointer<vtkUnstructuredGrid>::New();
-	uGrid->InsertNextCell(VTK_POLYHEDRON,
-		numberOfVertices, dodechedronPointsIds,
-		numberOfFaces, dodechedronFaces->GetPointer());
-	uGrid->SetPoints(points);
-
-	return uGrid;
 }
 
 
@@ -164,25 +54,6 @@ vtkSmartPointer<vtkUnstructuredGrid> ReadFile(const char* path)
 	reader->SetFileName(path);
 	reader->Update();
 	return reader->GetOutput();
-}
-
-void TryToReadFile()
-{
-	const char* path = "D:/test2.vtk";
-	vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile(path);
-	std::cout << grid->GetNumberOfPoints();
-}
-
-void TestOnPolyhedron()
-{
-	vtkSmartPointer<vtkUnstructuredGrid> grid = MakePolyhedron();
-	Graph g(grid);
-	Solver solver;
-	BiDirectional bd;
-	solver.SetStrategy(bd);
-	vtkSmartPointer<vtkIdList> result = solver.Solve(&g, 0, 18);
-	for (vtkIdType i = 0; i < result->GetNumberOfIds(); i++)
-		std::cout << result->GetId(i) << ' ';
 }
 
 vtkSmartPointer<vtkUnstructuredGrid> MakeHexahedronGrid()
@@ -281,7 +152,6 @@ vtkSmartPointer<vtkUnstructuredGrid> MakeHexahedronGrid()
 	sCell5->InsertNextId(21);
 	sCell5->InsertNextId(17);
 	grid->InsertNextCell(VTK_HEXAHEDRON, sCell5);
-	WriteFile(grid, "D:/test3.vtu");
 	return grid;
 }
 
@@ -289,13 +159,71 @@ void Test()
 {
 	vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/test2.vtk");
 	Graph graph(grid);
-	Solver s;
 	AStar star;
 	BiDirectional bd;
-	s.SetStrategy(star);
-	vtkSmartPointer<vtkIdList> result = s.Solve(&graph, 28429, 471); 
-	for (vtkIdType i = 0; i < result->GetNumberOfIds(); i++)
-		std::cout << result->GetId(i) << ' ';
-	return;
+	BFS bfs;
+
+	vtkIdType start = 28429;
+	vtkIdType end = 741; //741-path exists	//471-path not exists
+	std::cout << "BFS TEST" << std::endl;
+	Performance(bfs, graph, start, end);
+
+	std::cout << "BiDir TEST" << std::endl;
+	Performance(bd, graph, start, end);
+
+	std::cout << "A* TEST" << std::endl;
+	Performance(star, graph, start, end);
 }
 
+void TestBFS()
+{
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/test3.vtu");
+	vtkSmartPointer<vtkUnstructuredGrid> grid = MakeHexahedronGrid();
+	Graph graph(grid);
+	Solver s;
+	vtkSmartPointer<vtkIdList> result = s.Solve(&graph, 0,23);
+	for (vtkIdType i = 0; i < result->GetNumberOfIds(); i++)
+		std::cout << result->GetId(i) << ' ';
+	std::cout << std::endl;
+	std::cout << "length=" << result->GetNumberOfIds()<<std::endl;
+}
+
+void TestBiDir()
+{
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/test3.vtu");
+	vtkSmartPointer<vtkUnstructuredGrid> grid = MakeHexahedronGrid();
+	Graph graph(grid);
+	Solver s;
+	BiDirectional bd;
+	s.SetStrategy(bd);
+	vtkSmartPointer<vtkIdList> result = s.Solve(&graph, 0,23);
+	for (vtkIdType i = 0; i < result->GetNumberOfIds(); i++)
+		std::cout << result->GetId(i) << ' ';
+	std::cout << std::endl;
+	std::cout << "length=" << result->GetNumberOfIds()<<std::endl;
+}
+
+void TestAstar()
+{
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/test3.vtu");
+	vtkSmartPointer<vtkUnstructuredGrid> grid = MakeHexahedronGrid();
+	Graph graph(grid);
+	Solver s;
+	AStar astar;
+	s.SetStrategy(astar);
+	vtkSmartPointer<vtkIdList> result = s.Solve(&graph, 0, 23);
+	for (vtkIdType i = 0; i < result->GetNumberOfIds(); i++)
+		std::cout << result->GetId(i) << ' ';
+	std::cout << std::endl;
+	std::cout << "length=" << result->GetNumberOfIds()<<std::endl;
+}
+
+void Performance(PFStrategy &algorithm, Graph &g, vtkIdType start, vtkIdType finish)
+{
+	auto begin = std::chrono::steady_clock::now();
+	vtkSmartPointer<vtkIdList> result1 = algorithm.Solve(&g, start, finish);
+	auto end = std::chrono::steady_clock::now();
+	auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
+	std::cout << "path length=" << result1->GetNumberOfIds() << std::endl;
+	std::cout << "The time: " << elapsed_ms.count() << " ms" << std::endl;
+}

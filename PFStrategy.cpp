@@ -80,17 +80,19 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	double gValue = 0;
 	double fValue = 0;
 
-	std::unordered_map<vtkIdType, Node*> closed; //visited vertices
+	std::unordered_map<vtkIdType, Node*> closed; //used states
+	std::unordered_map<vtkIdType, Node*> open;	//not used states
 
-	auto cmp = [](const Node* n1, const Node* n2) {return n1->priority > n2->priority; };
-	std::priority_queue<Node*, std::vector<Node*>, decltype(cmp)> idq(cmp);
-
+	auto cmp = [](const Node* n1, const Node* n2) {return n1->priority < n2->priority; };
+	std::set<Node*, decltype(cmp)> idq(cmp);		//priority queue
 	idq.emplace(new Node(start, NULL, 0, Heuristic(grid, start, end)));
-	Node* current = idq.top();
+	Node* current = NULL;
+
 	while (!idq.empty())
 	{
-		current = idq.top();
-		idq.pop();
+		current = *idq.begin();
+		idq.erase(idq.begin());
+
 		closed.emplace(current->id, current);
 		if (current->id == end)
 			break;
@@ -105,12 +107,24 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 			next = cellPointIds->GetId(j);
 			gValue = current->cost + 1;
 		    fValue = Heuristic(grid, next, end);
+			
 
 			//skip visited vertices
 			auto tmp = closed.find(next);
 			if (tmp != closed.end())
-				continue;
-			idq.emplace(new Node(next, current, gValue, fValue));
+				continue;	
+
+			auto exist = open.find(next);
+			if (exist == open.end() || gValue < (exist->second)->cost) 
+			{
+				Node* newNode = new Node(next, current, gValue, fValue);
+				if (exist != open.end())
+				{
+					open.insert({ exist->first, newNode });
+					idq.erase(exist->second);
+				}
+				idq.emplace(newNode);
+			}
 		}
 	}
 
@@ -137,7 +151,8 @@ double AStar::Heuristic(Graph *grid, vtkIdType start, vtkIdType target)
 	double p2[3];
 	grid->GetPoint(start, p1);
 	grid->GetPoint(target, p2);
-	double result = sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2));
+	double result = sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2));	//euclidean distance
+	//double result = abs(p1[0]-p2[0])+ abs(p1[1] - p2[1])+ abs(p1[2] - p2[2]);	//manhattan distance	
 	return result;
 }
 
@@ -239,3 +254,62 @@ vtkSmartPointer<vtkIdList> BiDirectional::Merge(vtkSmartPointer<vtkIdList> first
 		result->InsertNextId(firstHalf->GetId(i));
 	return result;
 }
+
+//vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
+//{
+//	if (start == end)
+//		return OneVertexPath(start);
+//
+//	int next = 0;
+//	double gValue = 0;
+//	double fValue = 0;
+//
+//	std::unordered_map<vtkIdType, Node*> closed; //рассмотренные вершины
+//
+//	//элементы выстроены по возрастанию приоритета
+//	auto cmp = [](const Node* n1, const Node* n2) {return n1->priority > n2->priority; };
+//	std::priority_queue<Node*, std::vector<Node*>, decltype(cmp)> idq(cmp);
+//
+//	idq.emplace(new Node(start, NULL, 0, Heuristic(grid, start, end)));
+//	Node* current = idq.top();
+//	while (!idq.empty())
+//	{
+//		current = idq.top();
+//		idq.pop();
+//		closed.emplace(current->id, current);
+//		if (current->id == end)
+//			break;
+//
+//		//соседи текущей вершины
+//		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
+//		grid->GetAdj(current->id, cellPointIds);
+//
+//		//добавление в очередь точек, смежных с текущей
+//		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
+//		{
+//			next = cellPointIds->GetId(j);
+//			gValue = current->cost + 1;
+//			fValue = Heuristic(grid, next, end);
+//
+//			//пропускаем рассмотренные вершины
+//			auto tmp = closed.find(next);
+//			if (tmp != closed.end())
+//				continue;
+//			idq.emplace(new Node(next, current, gValue, fValue));
+//		}
+//	}
+//
+//	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
+//	auto target = closed.find(end);
+//	if (target != closed.end())
+//	{
+//		Node* curr = target->second;
+//		while (curr->id != start)
+//		{
+//			result->InsertNextId(curr->id);
+//			curr = curr->prev;
+//		}
+//		result->InsertNextId(curr->id);
+//	}
+//	return result;
+//}
