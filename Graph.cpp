@@ -7,10 +7,6 @@ Graph::Graph(vtkSmartPointer<vtkUnstructuredGrid> grid)
 	this->grid = grid;
 }
 
-vtkPoints* Graph::GetPoints()
-{
-	return grid->GetPoints();
-}
 
 vtkCellArray* Graph::GetCells()
 {
@@ -80,5 +76,10 @@ void Graph::LoadFile(const char* path)
 	reader->SetFileName(path);
 	reader->Update();
 	grid = reader->GetOutput();
+}
+
+vtkSmartPointer<vtkUnstructuredGrid> Graph::GetComponent()
+{
+	return grid;
 }
 

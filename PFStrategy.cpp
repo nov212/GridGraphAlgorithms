@@ -1,4 +1,5 @@
 #include "PFStrategy.h"
+#include "Heuristic.h"
 #include <queue>
 #include <unordered_map>
 #include <set>
@@ -34,7 +35,7 @@ vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType en
 {
 	if (start == end)
 		return OneVertexPath(start);
-
+	int visited = 0;
 	int* prev = new int[grid->GetNumberOfPoints()]; //previous elements
 	std::queue<int> idq;
 	for (vtkIdType i = 0; i < grid->GetNumberOfPoints(); i++)
@@ -46,6 +47,7 @@ vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType en
 	{
 		current = idq.front();
 		idq.pop();
+		visited++;
 		if (current == end)
 			break;
 
@@ -65,6 +67,7 @@ vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType en
 		}
 
 	}
+	std::cout << "BFS visited=" << visited << std::endl;
 	return BuildPath(prev, start, end);
 }
 
@@ -75,7 +78,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 {
 	if (start == end)
 		return OneVertexPath(start);
-
+	int visited = 0;
 	int next = 0;
 	double gValue = 0;
 	double fValue = 0;
@@ -85,7 +88,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 
 	auto cmp = [](const Node* n1, const Node* n2) {return n1->priority < n2->priority; };
 	std::set<Node*, decltype(cmp)> idq(cmp);		//priority queue
-	idq.emplace(new Node(start, NULL, 0, Heuristic(grid, start, end)));
+	idq.emplace(new Node(start, NULL, 0, Heuristic::manhattan(grid, start, end)));
 	Node* current = NULL;
 
 	while (!idq.empty())
@@ -94,6 +97,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		idq.erase(idq.begin());
 
 		closed.emplace(current->id, current);
+		visited++;
 		if (current->id == end)
 			break;
 
@@ -106,7 +110,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		{
 			next = cellPointIds->GetId(j);
 			gValue = current->cost + 1;
-		    fValue = Heuristic(grid, next, end);
+			fValue = gValue + Heuristic::manhattan(grid, next, end); 
 			
 
 			//skip visited vertices
@@ -142,37 +146,33 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		}
 		result->InsertNextId(curr->id);
 	}
+	std::cout << "AStar visited=" << visited << std::endl;
 	return result;
 }
 
-double AStar::Heuristic(Graph *grid, vtkIdType start, vtkIdType target)
-{
-	double p1[3];
-	double p2[3];
-	grid->GetPoint(start, p1);
-	grid->GetPoint(target, p2);
-	double result = sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2));	//euclidean distance
-	//double result = abs(p1[0]-p2[0])+ abs(p1[1] - p2[1])+ abs(p1[2] - p2[2]);	//manhattan distance	
-	return result;
-}
+//double AStar::Heuristic(Graph *grid, vtkIdType start, vtkIdType target)
+//{
+//	double p1[3];
+//	double p2[3];
+//	grid->GetPoint(start, p1);
+//	grid->GetPoint(target, p2);
+//	double result = abs(p1[0]-p2[0])+ abs(p1[1] - p2[1])+ abs(p1[2] - p2[2]);	//manhattan distance	
+//	return result;
+//}
 
 vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
 	if (start == end)
 		return OneVertexPath(start);
 	
-
+	int visited = 0;
 	int* prev = new int[grid->GetNumberOfPoints()]; //previous elements
-	//labels:
-	//	N - vertex is not labeled
-	//  F - labeled by forward direction
-	//	B - labeled by backward direction
-	const char FRONT = 'F';
-	const char BACK = 'B';
-	const char NONE = 'N';
+	
 
 	char* label= new char[grid->GetNumberOfPoints()]; 
-	std::queue<int> idq;
+	std::queue<int> frontq;
+	std::queue<int> backq;
+
 	for (vtkIdType i = 0; i < grid->GetNumberOfPoints(); i++)
 	{
 		prev[i] = -1;
@@ -185,45 +185,29 @@ vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtk
 	label[start] = FRONT;
 	label[end] =BACK;
 
-	idq.push(start);
-	idq.push(end);
-	while (!idq.empty())
+	frontq.push(start);
+	backq.push(end);
+
+	int pair[2] = { -1, -1 };
+	while (!frontq.empty() || !backq.empty())
 	{
-		current = idq.front();
-		idq.pop();
-
-		//neighbours of current vertex
-		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
-		grid->GetAdj(current, cellPointIds);
-
-		//pushing vertices adjacent to current
-		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
-		{
-			int next = cellPointIds->GetId(j);
-			if (label[next] == NONE)
-			{
-				idq.push(next);
-				label[next] = label[current];
-				prev[next] = current;
-			}
-			else 
-				if (label[next] !=label[current])
-				{
-					intersec = next;
-					oncoming = current;
-					solved = true;
-					break;
-				}
-		}		
+		solved = BFSIter(label, prev, grid, &frontq, pair);
+		visited++;
+		if (solved)
+			break;
+		solved = BFSIter(label, prev, grid, &backq, pair);
+		visited++;
 		if (solved)
 			break;
 	}
-
+	std::cout << "BiDir visited=" << visited << std::endl;
 	vtkSmartPointer<vtkIdList> result = vtkSmartPointer<vtkIdList>::New();
 
 	//building path 
 	if (solved)
 	{
+		oncoming = pair[0];
+		intersec = pair[1];
 		vtkSmartPointer<vtkIdList> firstHalf = vtkSmartPointer<vtkIdList>::New();
 		vtkSmartPointer<vtkIdList> secondHalf = vtkSmartPointer<vtkIdList>::New();
 		if (label[intersec] == FRONT)
@@ -255,6 +239,38 @@ vtkSmartPointer<vtkIdList> BiDirectional::Merge(vtkSmartPointer<vtkIdList> first
 	return result;
 }
 
+bool BiDirectional::BFSIter(char* label, int* prev, Graph *grid, std::queue<int> *idq, int* intersec)
+{
+	if (!idq->empty())
+	{
+		vtkIdType current = idq->front();
+		idq->pop();
+
+		//neighbours of current vertex
+		vtkSmartPointer<vtkIdList> cellPointIds = vtkSmartPointer<vtkIdList>::New();
+		grid->GetAdj(current, cellPointIds);
+
+		//pushing vertices adjacent to current
+		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
+		{
+			int next = cellPointIds->GetId(j);
+			if (label[next] == NONE)
+			{
+				idq->push(next);
+				label[next] = label[current];
+				prev[next] = current;
+			}
+			else
+				if (label[next] != label[current])
+				{
+					intersec[1] = next;		//intersec[0]- oncoming, intersec[1]-intersec
+					intersec[0] = current;
+					return true;
+				}
+		}
+	}
+	return false;
+}
 //vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 //{
 //	if (start == end)

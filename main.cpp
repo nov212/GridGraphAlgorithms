@@ -157,14 +157,16 @@ vtkSmartPointer<vtkUnstructuredGrid> MakeHexahedronGrid()
 
 void Test()
 {
-	vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/test2.vtk");
+	vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/cube_17_tetra.vtk");
+	std::cout << grid->GetNumberOfPoints() << std::endl;
 	Graph graph(grid);
 	AStar star;
 	BiDirectional bd;
 	BFS bfs;
 
-	vtkIdType start = 28429;
-	vtkIdType end = 741; //741-path exists	//471-path not exists
+	std::cout << "gear.vtk" << std::endl;
+	vtkIdType start = 8265;//28429
+	vtkIdType end = 4319; //741-path exists	//471-path not exists
 	std::cout << "BFS TEST" << std::endl;
 	Performance(bfs, graph, start, end);
 
@@ -226,4 +228,7 @@ void Performance(PFStrategy &algorithm, Graph &g, vtkIdType start, vtkIdType fin
 	auto elapsed_ms = std::chrono::duration_cast<std::chrono::milliseconds>(end - begin);
 	std::cout << "path length=" << result1->GetNumberOfIds() << std::endl;
 	std::cout << "The time: " << elapsed_ms.count() << " ms" << std::endl;
+	for (vtkIdType i = 0; i < result1->GetNumberOfIds(); i++)
+		std::cout << result1->GetId(i) << ", ";
+	std::cout << std::endl;
 }

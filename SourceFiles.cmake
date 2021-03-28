@@ -3,6 +3,7 @@ set ( SOURCE_FILES
 	PFStrategy.cpp
 	Graph.cpp
 	Solver.cpp
+	Heuristic.cpp
 	main.cpp
 )
 
@@ -11,4 +12,5 @@ set ( HEADER_FILES
 	./PFStrategy.h
 	./Solver.h
 	./Graph.h
+	./Heuristic.h
 )
