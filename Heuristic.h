@@ -4,9 +4,10 @@
 static class Heuristic
 {
 public: 
-	static double manhattan(Graph *grid, vtkIdType start, vtkIdType target);
-	static double presumptiveLength(Graph *grid, vtkIdType start, vtkIdType target);
-	static double euclidian(Graph *grid, vtkIdType start, vtkIdType target);
+	double manhattan(Graph *grid, vtkIdType start, vtkIdType target);
+	double presumptiveLength(Graph *grid, vtkIdType start, vtkIdType target);
+	double euclidian(Graph *grid, vtkIdType start, vtkIdType target);
 private:
-	int* preprocess(Graph *grid);
+	double* stat=NULL;
+	double* preprocess(Graph *grid);
 };

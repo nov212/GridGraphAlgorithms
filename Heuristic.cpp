@@ -1,5 +1,6 @@
 #include "Heuristic.h"
 #include <math.h>
+#include <vtkExtractEdges.h>
 
 double Heuristic::manhattan(Graph *grid, vtkIdType start, vtkIdType target)
 {
@@ -31,13 +32,41 @@ double* Heuristic::preprocess(Graph *grid)
 	stat[1] = -1;
 	stat[2] = VTK_DOUBLE_MAX;
 
+	double length=0;
+	int edgeCount = 0;
+
+	
 	vtkSmartPointer<vtkUnstructuredGrid> mesh = grid->GetComponent();
-	extract
+
+	//просмотр каждой €чейки сетки
 	for (vtkIdType i = 0; i < mesh->GetNumberOfCells(); i++)
 	{
-		vtkCell* cell = mesh->GetCell(i);
-		vtkSmartPointer<vtkEdge> points = cell->getEdge;
-		cell->getEdg
+		//подсчЄт длины каждого ребра €чейки
+		vtkSmartPointer<vtkCell> cell = mesh->GetCell(i);
+	
+		for (vtkIdType j = 0; j < cell->GetNumberOfEdges(); i++)
+		{
+			vtkSmartPointer<vtkCell> edge = cell->GetEdge(j);
+			edgeCount++;
+			length = euclidian(grid, edge->GetPointId(0), edge->GetPointId(1));
+
+			if (length > stat[1])
+				stat[1] = length;
+			if (length<stat[2])
+				stat[2] = length;
+			stat[0] += length;
+		}
 	}
+	stat[0] / edgeCount;
+	return stat;
+}
+
+
+double Heuristic::presumptiveLength(Graph *grid, vtkIdType start, vtkIdType target)
+{
+	if (stat==NULL)
+		stat= preprocess(grid);
+	double average = stat[0];
+	return euclidian(grid, start, target) / average;
 
 }

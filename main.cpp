@@ -23,12 +23,33 @@ void Test();
 void TestBFS();	
 void TestBiDir();	
 void TestAstar();
+void TestExample(const char*, vtkIdType, vtkIdType);
 
 
 
 int main(int argc, char **argv)
 {
-	Test();
+	TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 10830, 510);
+	TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 4, 6);
+	TestExample("D:/meshPathFind/cube_17_tetra.vtk", 8265, 4319);
+	TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 34, 161354);
+	TestExample("D:/meshPathFind/gear.vtk", 5074, 10054);
+	TestExample("D:/meshPathFind/quad_10_quad.vtk", 1, 2);
+	TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 6686, 7682);
+	TestExample("D:/meshPathFind/solid-loft.vtk", 0, 101);
+	TestExample("D:/meshPathFind/solid-loft.vtk", 0, 786);
+	TestExample("D:/meshPathFind/solid-loft.vtk", 222, 1200);
+	TestExample("D:/meshPathFind/quad_10_quad.vtk", 2827, 7183);
+	TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 0, 186);
+	TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 11506, 12670);
+	TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 11506, 187);
+	TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 4, 2);
+	TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 15896, 6295);
+	TestExample("D:/meshPathFind/cube_17_tetra.vtk", 8265, 239);
+	TestExample("D:/meshPathFind/cube_17_tetra.vtk", 15935, 19648);
+	TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 84, 134308);
+	TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 84, 279);
+	TestExample("D:/meshPathFind/gear.vtk", 669, 6459);
 	return 0;
 }
 
@@ -231,4 +252,31 @@ void Performance(PFStrategy &algorithm, Graph &g, vtkIdType start, vtkIdType fin
 	for (vtkIdType i = 0; i < result1->GetNumberOfIds(); i++)
 		std::cout << result1->GetId(i) << ", ";
 	std::cout << std::endl;
+}
+
+void TestExample(const char* str, vtkIdType start, vtkIdType end)
+{
+	vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile(str);
+	Graph graph(grid);
+	AStar star;
+	BiDirectional bd;
+	BFS bfs;
+
+	std::string s = str;
+	std::string fileName = s.substr(s.find_last_of('/') + 1);
+
+	std::cout << "FILE NAME: " << fileName << std::endl;
+	std::cout << "NUMBER OF POINTS: " << grid->GetNumberOfPoints() << std::endl;
+	std::cout << "START POINT: " << start << std::endl;
+	std::cout << "END POINT: " << end << std::endl;
+	std::cout << std::endl;
+
+	std::cout << "BFS TEST" << std::endl;
+	Performance(bfs, graph, start, end);
+
+	std::cout << "BiDir TEST" << std::endl;
+	Performance(bd, graph, start, end);
+
+	std::cout << "A* TEST" << std::endl;
+	Performance(star, graph, start, end);
 }

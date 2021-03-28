@@ -82,13 +82,14 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	int next = 0;
 	double gValue = 0;
 	double fValue = 0;
+	Heuristic heuristic;
 
 	std::unordered_map<vtkIdType, Node*> closed; //used states
 	std::unordered_map<vtkIdType, Node*> open;	//not used states
 
 	auto cmp = [](const Node* n1, const Node* n2) {return n1->priority < n2->priority; };
 	std::set<Node*, decltype(cmp)> idq(cmp);		//priority queue
-	idq.emplace(new Node(start, NULL, 0, Heuristic::manhattan(grid, start, end)));
+	idq.emplace(new Node(start, NULL, 0, heuristic.presumptiveLength(grid, start, end)));
 	Node* current = NULL;
 
 	while (!idq.empty())
@@ -110,7 +111,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		{
 			next = cellPointIds->GetId(j);
 			gValue = current->cost + 1;
-			fValue = gValue + Heuristic::manhattan(grid, next, end); 
+			fValue = gValue + heuristic.presumptiveLength(grid, next, end);
 			
 
 			//skip visited vertices
