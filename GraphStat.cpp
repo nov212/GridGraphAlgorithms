@@ -3,7 +3,12 @@
 #include <vtkIdTypeArray.h>
 
 
-double GraphStat::getAverageEdgeLength(Graph *grid)
+GraphStat::GraphStat()
+{
+	averageLength = -1;
+}
+
+void GraphStat::setGraph(Graph *grid)
 {
 	std::set<std::pair<vtkIdType, vtkIdType>> edges;
 
@@ -27,7 +32,12 @@ double GraphStat::getAverageEdgeLength(Graph *grid)
 			totalLength += length;
 		}
 	}
-	return totalLength / edgeCount;
+	averageLength = totalLength / edgeCount;
+}
+
+double GraphStat::getAverageEdgeLength()
+{
+	return averageLength;
 }
 
 double GraphStat::edgeLength(Graph *grid, vtkIdType start, vtkIdType target)

@@ -1,13 +1,31 @@
 #include <vtkIdList.h>
 #include "Graph.h"
+#include "GraphStat.h"
 
-static class Heuristic
+class Heuristic
 {
 public: 
-	double manhattan(Graph *grid, vtkIdType start, vtkIdType target);
-	double presumptiveLength(Graph *grid, vtkIdType start, vtkIdType target);
-	double euclidian(Graph *grid, vtkIdType start, vtkIdType target);
-	double* preprocess(Graph *grid);
+	virtual double calculate(Graph *grid, vtkIdType start, vtkIdType target)=0;
+};
+
+class ManhattanHeuristic: public Heuristic
+{
+public:
+	virtual double calculate(Graph *grid, vtkIdType start, vtkIdType target) override;
+};
+
+class EuclideanHeuristic : public Heuristic
+{
+public:
+	virtual double calculate(Graph *grid, vtkIdType start, vtkIdType target) override;
+};
+
+class PathLengthMeter : public Heuristic
+{
+public:
+	PathLengthMeter();
+	virtual double calculate(Graph *grid, vtkIdType start, vtkIdType target) override;
 private:
-	double* stat=NULL;
+	GraphStat* graphStat;
+	double euclidean(Graph *grid, vtkIdType start, vtkIdType target);
 };

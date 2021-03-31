@@ -71,8 +71,18 @@ vtkSmartPointer<vtkIdList> BFS::Solve(Graph *grid, vtkIdType start, vtkIdType en
 	return BuildPath(prev, start, end);
 }
 
+AStar::AStar()
+{
+	this->heuristic = new ManhattanHeuristic();
+}
+
 AStar::Node::Node(vtkIdType _id, Node *_prev, double _cost, double _priority) :id(_id), prev(_prev), cost(_cost), 
 priority(_priority) {}
+
+void AStar::setHeuristic(Heuristic* heuristic)
+{
+	this->heuristic = heuristic;
+}
 
 vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
@@ -82,14 +92,13 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	int next = 0;
 	double gValue = 0;
 	double fValue = 0;
-	Heuristic heuristic;
 
 	std::unordered_map<vtkIdType, Node*> closed; //used states
 	std::unordered_map<vtkIdType, Node*> open;	//not used states
 
 	auto cmp = [](const Node* n1, const Node* n2) {return n1->priority < n2->priority; };
 	std::set<Node*, decltype(cmp)> idq(cmp);		//priority queue
-	idq.emplace(new Node(start, NULL, 0, heuristic.presumptiveLength(grid, start, end)));
+	idq.emplace(new Node(start, NULL, 0, heuristic->calculate(grid, start, end)));
 	Node* current = NULL;
 
 	while (!idq.empty())
@@ -111,7 +120,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		{
 			next = cellPointIds->GetId(j);
 			gValue = current->cost + 1;
-			fValue = gValue + heuristic.presumptiveLength(grid, next, end);
+			fValue = gValue + heuristic->calculate(grid, next, end);
 			
 
 			//skip visited vertices
@@ -151,15 +160,10 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	return result;
 }
 
-//double AStar::Heuristic(Graph *grid, vtkIdType start, vtkIdType target)
-//{
-//	double p1[3];
-//	double p2[3];
-//	grid->GetPoint(start, p1);
-//	grid->GetPoint(target, p2);
-//	double result = abs(p1[0]-p2[0])+ abs(p1[1] - p2[1])+ abs(p1[2] - p2[2]);	//manhattan distance	
-//	return result;
-//}
+AStar::~AStar()
+{
+	delete heuristic;
+}
 
 vtkSmartPointer<vtkIdList>BiDirectional::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {

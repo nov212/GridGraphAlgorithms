@@ -2,7 +2,10 @@
 class GraphStat
 {
 private:
-	static double edgeLength(Graph *grid, vtkIdType start, vtkIdType target);
+	double edgeLength(Graph *grid, vtkIdType start, vtkIdType target);
+	double averageLength;
 public:
-	static double getAverageEdgeLength(Graph *grid);
+	GraphStat();
+	void setGraph(Graph *grid);
+	double getAverageEdgeLength();
 };
