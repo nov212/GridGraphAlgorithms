@@ -4,6 +4,7 @@ set ( SOURCE_FILES
 	Graph.cpp
 	Solver.cpp
 	Heuristic.cpp
+	GraphStat.cpp
 	main.cpp
 )
 
@@ -13,4 +14,5 @@ set ( HEADER_FILES
 	./Solver.h
 	./Graph.h
 	./Heuristic.h
+	./GraphStat.h
 )

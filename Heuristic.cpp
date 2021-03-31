@@ -17,7 +17,7 @@ double Heuristic::euclidian(Graph *grid, vtkIdType start, vtkIdType target)
 	double* p1 = new double[3];
 	double* p2 = new double[3];
 	grid->GetPoint(start, p1);
-	grid->GetPoint(start, p2);
+	grid->GetPoint(target, p2);
 	double res = sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2));
 	return res;
 }
@@ -43,8 +43,8 @@ double* Heuristic::preprocess(Graph *grid)
 	{
 		//подсчЄт длины каждого ребра €чейки
 		vtkSmartPointer<vtkCell> cell = mesh->GetCell(i);
-	
-		for (vtkIdType j = 0; j < cell->GetNumberOfEdges(); i++)
+
+		for (vtkIdType j = 0; j < cell->GetNumberOfEdges(); j++)
 		{
 			vtkSmartPointer<vtkCell> edge = cell->GetEdge(j);
 			edgeCount++;
@@ -57,7 +57,7 @@ double* Heuristic::preprocess(Graph *grid)
 			stat[0] += length;
 		}
 	}
-	stat[0] / edgeCount;
+	stat[0]=stat[0] / edgeCount;
 	return stat;
 }
 

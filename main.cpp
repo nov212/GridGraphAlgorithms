@@ -11,6 +11,7 @@
 #include <vtkXMLUnstructuredGridReader.h>
 #include <queue>
 #include <chrono>
+#include "Heuristic.h"
 
 
 vtkSmartPointer<vtkUnstructuredGrid> MakeHexahedronGrid();		//construct grid built from VTK_HEXAHEDRON cells
@@ -29,27 +30,40 @@ void TestExample(const char*, vtkIdType, vtkIdType);
 
 int main(int argc, char **argv)
 {
-	TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 10830, 510);
-	TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 4, 6);
-	TestExample("D:/meshPathFind/cube_17_tetra.vtk", 8265, 4319);
-	TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 34, 161354);
-	TestExample("D:/meshPathFind/gear.vtk", 5074, 10054);
-	TestExample("D:/meshPathFind/quad_10_quad.vtk", 1, 2);
-	TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 6686, 7682);
-	TestExample("D:/meshPathFind/solid-loft.vtk", 0, 101);
-	TestExample("D:/meshPathFind/solid-loft.vtk", 0, 786);
-	TestExample("D:/meshPathFind/solid-loft.vtk", 222, 1200);
-	TestExample("D:/meshPathFind/quad_10_quad.vtk", 2827, 7183);
-	TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 0, 186);
-	TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 11506, 12670);
-	TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 11506, 187);
-	TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 4, 2);
-	TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 15896, 6295);
-	TestExample("D:/meshPathFind/cube_17_tetra.vtk", 8265, 239);
-	TestExample("D:/meshPathFind/cube_17_tetra.vtk", 15935, 19648);
-	TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 84, 134308);
-	TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 84, 279);
-	TestExample("D:/meshPathFind/gear.vtk", 669, 6459);
+	//TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 10830, 510);  // 1
+	//TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 4, 6);		 // 2
+	TestExample("D:/meshPathFind/cube_17_tetra.vtk", 8265, 4319);		 // 3
+	//TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 34, 161354);	 // 4
+	//TestExample("D:/meshPathFind/gear.vtk", 5074, 10054);				 // 5
+	//TestExample("D:/meshPathFind/quad_10_quad.vtk", 1, 2);				 // 6
+	//TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 6686, 7682);    // 7
+	//TestExample("D:/meshPathFind/solid-loft.vtk", 0, 101);				 // 8
+	//TestExample("D:/meshPathFind/solid-loft.vtk", 0, 786);				 // 9
+	//TestExample("D:/meshPathFind/solid-loft.vtk", 222, 1200);			 // 10
+	//TestExample("D:/meshPathFind/quad_10_quad.vtk", 2827, 7183);		 // 11
+	//TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 0, 186);		 // 12
+	//TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 11506, 12670); //13
+	//TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 11506, 187);  // 14
+	//TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 4, 2);	      // 15
+	//TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 15896, 6295);		// 16
+	//TestExample("D:/meshPathFind/cube_17_tetra.vtk", 8265, 239);		//17
+	//TestExample("D:/meshPathFind/cube_17_tetra.vtk", 15935, 19648);		// 18
+	//TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 84, 134308);	// 19
+	//TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 84, 279);	//20
+	//TestExample("D:/meshPathFind/gear.vtk", 669, 6459);					// 21
+	Heuristic heuristic;
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/cube_10_layer5_auto.vtk");	//73.7452
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/cube_17_hexahedron.vtk");		//10
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/cube_17_tetra.vtk");			//19.1813
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/cuboid_10x1000_auto.vtk");	//0.888512
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/gear.vtk");				//1.69097
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/quad_10_quad.vtk");		//10
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/solid-loft.vtk");			//0.624584
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/quad_10_quad_auto.vtk");	//10.6177
+
+	//Graph graph(grid);
+	//double* stat = heuristic.preprocess(&graph);
+	//std::cout << stat[0];
 	return 0;
 }
 
@@ -271,12 +285,12 @@ void TestExample(const char* str, vtkIdType start, vtkIdType end)
 	std::cout << "END POINT: " << end << std::endl;
 	std::cout << std::endl;
 
-	std::cout << "BFS TEST" << std::endl;
+	/*std::cout << "BFS TEST" << std::endl;
 	Performance(bfs, graph, start, end);
 
 	std::cout << "BiDir TEST" << std::endl;
 	Performance(bd, graph, start, end);
-
+*/
 	std::cout << "A* TEST" << std::endl;
 	Performance(star, graph, start, end);
 }
