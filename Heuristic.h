@@ -1,3 +1,4 @@
+#pragma once
 #include <vtkIdList.h>
 #include "Graph.h"
 #include "GraphStat.h"

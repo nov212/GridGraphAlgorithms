@@ -12,6 +12,9 @@
 #include <queue>
 #include <chrono>
 #include "Heuristic.h"
+#include <vtkExtractEdges.h>
+#include <vtkUnstructuredGridGeometryFilter.h>
+#include <map>
 
 
 vtkSmartPointer<vtkUnstructuredGrid> MakeHexahedronGrid();		//construct grid built from VTK_HEXAHEDRON cells
@@ -19,6 +22,9 @@ vtkSmartPointer<vtkUnstructuredGrid> ReadFile(const char* path);	//read .vtu fil
 void WriteFile(vtkSmartPointer<vtkUnstructuredGrid> grid, const char* path); //convert grid to .vtu file
 void Performance(PFStrategy &algorithm, Graph &g, vtkIdType start, vtkIdType finish); //print time and path length
 void Test();
+void ExtractEdges();
+void Useless();
+double EdgeLength(vtkUnstructuredGrid *grid, vtkIdType start, vtkIdType target);
 
 //simple tests on hexahedron grid
 void TestBFS();	
@@ -30,16 +36,16 @@ void TestExample(const char*, vtkIdType, vtkIdType);
 
 int main(int argc, char **argv)
 {
-	//TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 10830, 510);  // 1
-	//TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 4, 6);		 // 2
-	TestExample("D:/meshPathFind/cube_17_tetra.vtk", 8265, 4319);		 // 3
+	//TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 10830, 510);  // 1	множитель 40
+	//TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 4, 6);		 // 2	множитель 2
+	//TestExample("D:/meshPathFind/cube_17_tetra.vtk", 8265, 4319);		 // 3
 	//TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 34, 161354);	 // 4
-	//TestExample("D:/meshPathFind/gear.vtk", 5074, 10054);				 // 5
-	//TestExample("D:/meshPathFind/quad_10_quad.vtk", 1, 2);				 // 6
-	//TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 6686, 7682);    // 7
-	//TestExample("D:/meshPathFind/solid-loft.vtk", 0, 101);				 // 8
-	//TestExample("D:/meshPathFind/solid-loft.vtk", 0, 786);				 // 9
-	//TestExample("D:/meshPathFind/solid-loft.vtk", 222, 1200);			 // 10
+	TestExample("D:/meshPathFind/gear.vtk", 5074, 10054);				 // 5	множитель 100
+	//TestExample("D:/meshPathFind/quad_10_quad.vtk", 1, 2);				 // 6	множитель 2
+	//TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 6686, 7682);    // 7		множитель 2
+	//TestExample("D:/meshPathFind/solid-loft.vtk", 0, 101);				 // 8		множитель 65
+	//TestExample("D:/meshPathFind/solid-loft.vtk", 0, 786);				 // 9		множитель 2
+	//TestExample("D:/meshPathFind/solid-loft.vtk", 222, 1200);			 // 10			множитель 100
 	//TestExample("D:/meshPathFind/quad_10_quad.vtk", 2827, 7183);		 // 11
 	//TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 0, 186);		 // 12
 	//TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 11506, 12670); //13
@@ -51,7 +57,6 @@ int main(int argc, char **argv)
 	//TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 84, 134308);	// 19
 	//TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 84, 279);	//20
 	//TestExample("D:/meshPathFind/gear.vtk", 669, 6459);					// 21
-	Heuristic heuristic;
 	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/cube_10_layer5_auto.vtk");	//73.7452
 	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/cube_17_hexahedron.vtk");		//10
 	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/cube_17_tetra.vtk");			//19.1813
@@ -60,10 +65,13 @@ int main(int argc, char **argv)
 	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/quad_10_quad.vtk");		//10
 	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/solid-loft.vtk");			//0.624584
 	//vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile("D:/meshPathFind/quad_10_quad_auto.vtk");	//10.6177
+	/*Graph graph(grid);
+	double* stat = heuristic.preprocess(&graph);
+	std::cout << stat[0];*/
 
-	//Graph graph(grid);
-	//double* stat = heuristic.preprocess(&graph);
-	//std::cout << stat[0];
+	//double length = 0;
+	//double totalLength = 0;
+	//vtkSmartPointer<vtkUnstructuredGrid> grid = MakeHexahedronGrid();
 	return 0;
 }
 
@@ -273,6 +281,7 @@ void TestExample(const char* str, vtkIdType start, vtkIdType end)
 	vtkSmartPointer<vtkUnstructuredGrid> grid = ReadFile(str);
 	Graph graph(grid);
 	AStar star;
+	star.setHeuristic(new PathLengthMeter());
 	BiDirectional bd;
 	BFS bfs;
 
@@ -293,4 +302,98 @@ void TestExample(const char* str, vtkIdType start, vtkIdType end)
 */
 	std::cout << "A* TEST" << std::endl;
 	Performance(star, graph, start, end);
+}
+
+void ExtractEdges()
+{
+	vtkSmartPointer<vtkUnstructuredGrid> grid1 = MakeHexahedronGrid();
+	vtkSmartPointer<vtkUnstructuredGrid> grid = vtkUnstructuredGrid::New();
+	vtkSmartPointer<vtkPoints> startPoints = vtkSmartPointer<vtkPoints>::New();
+	startPoints->InsertNextPoint(0, 0, 0); //0
+	startPoints->InsertNextPoint(0, 10, 0);//1
+	startPoints->InsertNextPoint(10, 10, 0);//2
+	startPoints->InsertNextPoint(10, 0, 0);//3
+
+	startPoints->InsertNextPoint(20, 10, 0); //4
+	startPoints->InsertNextPoint(20, 0, 0); //5
+	grid->SetPoints(startPoints);
+
+	vtkSmartPointer<vtkIdList> sCell0 = vtkSmartPointer<vtkIdList>::New();
+	sCell0->InsertNextId(0);
+	sCell0->InsertNextId(1);
+	sCell0->InsertNextId(2);
+	sCell0->InsertNextId(3);
+	grid->InsertNextCell(VTK_QUAD, sCell0);
+
+	vtkSmartPointer<vtkIdList> sCell1 = vtkSmartPointer<vtkIdList>::New();
+	sCell1->InsertNextId(3);
+	sCell1->InsertNextId(2);
+	sCell1->InsertNextId(5);
+	sCell1->InsertNextId(4);
+	grid->InsertNextCell(VTK_QUAD, sCell1);
+
+	vtkSmartPointer<vtkExtractEdges> extractEdgesAlg = vtkSmartPointer<vtkExtractEdges>::New();
+	extractEdgesAlg->SetInput(grid1);
+	extractEdgesAlg->Update();
+
+	vtkSmartPointer<vtkPolyData> mesh = extractEdgesAlg->GetOutput();
+	vtkSmartPointer<vtkCellArray> edges = mesh->GetLines();
+
+	for (vtkIdType i = 0; i < edges->GetNumberOfCells(); i++)
+	{
+		vtkSmartPointer<vtkIdList> points = vtkSmartPointer<vtkIdList>::New();
+		mesh->GetCellPoints(i, points);
+		std::cout << i << ' ' << points->GetId(0) << ' ' << points->GetId(1) << std::endl;
+	}
+}
+
+void Useless()
+{
+	vtkSmartPointer<vtkUnstructuredGrid> grid = MakeHexahedronGrid();
+	vtkSmartPointer<vtkExtractEdges> extractEdgesAlg = vtkSmartPointer<vtkExtractEdges>::New();
+	extractEdgesAlg->SetInput(grid);
+	extractEdgesAlg->Update();
+
+	std::set<std::pair<vtkIdType, vtkIdType>> edgeList;
+
+	//getting result
+	vtkSmartPointer<vtkPolyData> mesh = extractEdgesAlg->GetOutput();
+
+	//for each line in mesh
+	for (vtkIdType i = 0; i < grid->GetNumberOfCells(); i++)
+	{
+		vtkSmartPointer<vtkCell> cell = grid->GetCell(i);
+
+		for (vtkIdType j = 0; j < cell->GetNumberOfEdges(); j++)
+		{
+			vtkIdType p1 = cell->GetEdge(j)->GetPointId(0);
+			vtkIdType p2 = cell->GetEdge(j)->GetPointId(1);
+			if (edgeList.find(std::make_pair(p1, p2)) == edgeList.end())
+				edgeList.emplace(p1, p2);
+		}
+		
+		//std::cout << i << ' ' << points->GetId(0) << ' ' << points->GetId(1) << std::endl;
+	}
+	int n = 0;
+	int totalLength=0;
+	for (auto j : edgeList)
+	{
+		std::cout <<n<<' '<<j.first << ' ' << j.second;
+		std::cout << std::endl;
+		totalLength+=EdgeLength(grid, j.first, j.second);
+		n++;
+	}
+	std::cout << "TOTAL LENGTH=" << totalLength;
+}
+
+double EdgeLength(vtkUnstructuredGrid *grid, vtkIdType start, vtkIdType target)
+{
+	double* p1 = new double[3];
+	double* p2 = new double[3];
+	grid->GetPoint(start, p1);
+	grid->GetPoint(target, p2);
+	double res = sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2));
+	delete[] p1;
+	delete[] p2;
+	return res;
 }

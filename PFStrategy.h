@@ -38,6 +38,7 @@ public:
 	void setHeuristic(Heuristic* heuristic);
 	~AStar();
 private:
+	Heuristic* heuristic;
 	struct Node
 	{
 		vtkIdType id;
@@ -46,7 +47,6 @@ private:
 		double priority;
 		Node(vtkIdType _id, Node *_prev=NULL, double _cost=0, double _priority=std::numeric_limits<double>::max());
 	};
-	Heuristic* heuristic;
 };
 
 class BiDirectional:public PFStrategy

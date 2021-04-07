@@ -76,7 +76,7 @@ double PathLengthMeter::calculate(Graph *grid, vtkIdType start, vtkIdType target
 		graphStat = new GraphStat();
 		graphStat->setGraph(grid);
 	}
-	double average = graphStat->getAverageEdgeLength;
+	double average = graphStat->getAverageEdgeLength();
 	double euclideanDistance = euclidean(grid, start, target);
 	if (euclideanDistance == 0)
 		return 0;

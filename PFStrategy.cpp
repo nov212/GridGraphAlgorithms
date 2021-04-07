@@ -89,7 +89,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	if (start == end)
 		return OneVertexPath(start);
 	int visited = 0;
-	int next = 0;
+	vtkIdType next = 0;
 	double gValue = 0;
 	double fValue = 0;
 
@@ -121,7 +121,6 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 			next = cellPointIds->GetId(j);
 			gValue = current->cost + 1;
 			fValue = gValue + heuristic->calculate(grid, next, end);
-			
 
 			//skip visited vertices
 			auto tmp = closed.find(next);
