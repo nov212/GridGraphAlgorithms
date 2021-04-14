@@ -77,7 +77,7 @@ void GraphStat::setGraph(Graph *grid)
 			}
 		}
 	}
-	averageLength = totalLength / (edgeCount);
+	averageLength = totalLength / (edgeCount); //643
 }
 
 double GraphStat::getAverageEdgeLength()

@@ -68,9 +68,6 @@ PathLengthMeter::PathLengthMeter()
 
 double PathLengthMeter::calculate(Graph *grid, vtkIdType start, vtkIdType target)
 {
-	////////////////////////////////////////////////////////
-	// рассмотреть случай, когда средняя длина < 1
-	/////////////////////////////////////////////////////////
 	if (graphStat == NULL)
 	{
 		graphStat = new GraphStat();
@@ -78,9 +75,9 @@ double PathLengthMeter::calculate(Graph *grid, vtkIdType start, vtkIdType target
 	}
 	double average = graphStat->getAverageEdgeLength();
 	double euclideanDistance = euclidean(grid, start, target);
-	if (euclideanDistance == 0)
-		return 0;
-	int res = static_cast<int>(euclideanDistance / average);
+	//if (euclideanDistance == 0)
+	//	return 0;
+	double res = euclideanDistance / average;
 	return res;
 
 }

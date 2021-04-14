@@ -46,6 +46,8 @@ private:
 		double cost;
 		double priority;
 		Node(vtkIdType _id, Node *_prev=NULL, double _cost=0, double _priority=std::numeric_limits<double>::max());
+		//bool operator ()(const Node* lhs, const Node* rhs);
+		~Node();
 	};
 };
 

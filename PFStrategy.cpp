@@ -79,10 +79,21 @@ AStar::AStar()
 AStar::Node::Node(vtkIdType _id, Node *_prev, double _cost, double _priority) :id(_id), prev(_prev), cost(_cost), 
 priority(_priority) {}
 
+AStar::Node::~Node()
+{
+	prev = NULL;
+}
+
 void AStar::setHeuristic(Heuristic* heuristic)
 {
 	this->heuristic = heuristic;
 }
+//bool AStar::Node::operator ()(const Node* lhs, const Node* rhs)
+//{
+//	if (lhs->priority <= rhs->priority)
+//		return true;
+//	return false;
+//}
 
 vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
@@ -96,17 +107,26 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 	std::unordered_map<vtkIdType, Node*> closed; //used states
 	std::unordered_map<vtkIdType, Node*> open;	//not used states
 
-	auto cmp = [](const Node* n1, const Node* n2) {return n1->priority < n2->priority; };
+	auto cmp = [](const Node* n1, const Node* n2) { 
+		if (n1->priority < n2->priority) 
+			return true;
+		if (n1->priority == n2->priority)
+			return n1->id<n2->id;
+		return false;
+	};
+
 	std::set<Node*, decltype(cmp)> idq(cmp);		//priority queue
 	idq.emplace(new Node(start, NULL, 0, heuristic->calculate(grid, start, end)));
-	Node* current = NULL;
+	//Node* current = NULL;
 
 	while (!idq.empty())
 	{
-		current = *idq.begin();
+		Node* current = *idq.begin();
 		idq.erase(idq.begin());
 
 		closed.emplace(current->id, current);
+		open.erase(current->id);
+
 		visited++;
 		if (current->id == end)
 			break;
@@ -119,24 +139,25 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		for (vtkIdType j = 0; j < cellPointIds->GetNumberOfIds(); j++)
 		{
 			next = cellPointIds->GetId(j);
-			gValue = current->cost + 1;
-			fValue = gValue + heuristic->calculate(grid, next, end);
 
 			//skip visited vertices
 			auto tmp = closed.find(next);
 			if (tmp != closed.end())
-				continue;	
+				continue;
+
+			gValue = current->cost + 1;
+			fValue = gValue + heuristic->calculate(grid, next, end);		 
 
 			auto exist = open.find(next);
-			if (exist == open.end() || gValue < (exist->second)->cost) 
+			if (exist == open.end() || gValue < (exist->second)->cost)
 			{
 				Node* newNode = new Node(next, current, gValue, fValue);
 				if (exist != open.end())
 				{
-					open.insert({ exist->first, newNode });
 					idq.erase(exist->second);
 				}
-				idq.emplace(newNode);
+				open.emplace(next, newNode);
+				idq.insert(newNode);
 			}
 		}
 	}
