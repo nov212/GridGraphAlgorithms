@@ -1,5 +1,6 @@
 #include "Graph.h"
 #include <vtkSmartPointer.h>
+#include <cmath>
 #include <set>
 
 Graph::Graph(vtkSmartPointer<vtkUnstructuredGrid> grid)
@@ -77,6 +78,19 @@ void Graph::LoadFile(const char* path)
 	reader->Update();
 	grid = reader->GetOutput();
 }
+
+double Graph::GetDistance(vtkIdType start, vtkIdType end)
+{
+	double* p1 = new double[3];
+	double* p2 = new double[3];
+	grid->GetPoint(start, p1);
+	grid->GetPoint(end, p2);
+	double res = sqrt(pow(p1[0] - p2[0], 2) + pow(p1[1] - p2[1], 2) + pow(p1[2] - p2[2], 2));
+	delete[] p1;
+	delete[] p2;
+	return res;
+}
+
 
 vtkSmartPointer<vtkUnstructuredGrid> Graph::GetComponent()
 {

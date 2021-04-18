@@ -79,6 +79,15 @@ AStar::AStar()
 AStar::Node::Node(vtkIdType _id, Node *_prev, double _cost, double _priority) :id(_id), prev(_prev), cost(_cost), 
 priority(_priority) {}
 
+bool AStar::Node::operator()(const Node* n1, const Node* n2)
+{
+	if (n1->priority < n2->priority)
+		return true;
+		if (n1->priority == n2->priority)
+			return n1->id < n2->id;
+		return false;
+}
+
 AStar::Node::~Node()
 {
 	prev = NULL;
@@ -88,12 +97,68 @@ void AStar::setHeuristic(Heuristic* heuristic)
 {
 	this->heuristic = heuristic;
 }
-//bool AStar::Node::operator ()(const Node* lhs, const Node* rhs)
-//{
-//	if (lhs->priority <= rhs->priority)
-//		return true;
-//	return false;
-//}
+
+double AStar::Gvalue(Graph* grid, Node* current, vtkIdType next)
+{
+	//APPROACH 1
+	// return 1;
+
+	//APPROACH 2
+	//returns euclidean distance between current and next node
+	return grid->GetDistance(current->id, next);
+}
+
+double* AStar::PathLengthFromSource(Graph* grid, Node* target)
+{
+	//result[0]-length of path going through start node and target node
+	//result[1]-number of nodes in the path
+	double* result = new double[2]{ 0,0 }; 
+	double currentPathLength = 0;
+	int nodeCounter=0;
+	Node* startNode = target;
+	while (startNode->prev != NULL)
+	{
+		currentPathLength += grid->GetDistance(startNode->id, startNode->prev->id);
+		startNode = startNode->prev;
+		nodeCounter++;
+	}
+	result[0] = currentPathLength;
+	result[1] = nodeCounter;
+	return result;
+}
+
+double AStar::Hvalue(Graph* grid, Node* current, vtkIdType next, vtkIdType end)
+{
+	//APPROACH 1
+	// fValue if presumptive count of nodes between next and end node calculated by
+	// the formula: DNE/AEL where
+	//DNE-euclidean distance between next and end node
+	// AEL-average edge length between start and next node
+
+	// Arrpoach 1 is used when gValue is number of passed nodes
+	double edgeLength = grid->GetDistance(current->id, next);
+	double pathLengthFromNextToEnd = grid->GetDistance(next, end);
+	double hValue = 0;			   //result
+	int nodeCounter = 0;		  //number of passed nodes between start and next 
+	double currentPathLength = 0; //path length between start node and current node 
+
+	//double* distance = PathLengthFromSource(grid, current);
+
+	////distance between current and next node
+	//currentPathLength = distance[0] + edgeLength; 
+	//nodeCounter = distance[1] + 1;
+
+	//double averageLength = currentPathLength / nodeCounter;		//average edge length in path
+	//hValue = pathLengthFromNextToEnd/averageLength;	
+
+	 //APPROACH 2
+	// hValue is euclidean distance between  next and end node
+	//gValue is path length between current and next node
+	hValue= grid->GetDistance(next, end);
+
+
+	return hValue;
+}
 
 vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType end)
 {
@@ -115,9 +180,8 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		return false;
 	};
 
-	std::set<Node*, decltype(cmp)> idq(cmp);		//priority queue
-	idq.emplace(new Node(start, NULL, 0, heuristic->calculate(grid, start, end)));
-	//Node* current = NULL;
+	std::set < Node*, decltype(cmp)> idq(cmp);		//priority queue
+	idq.emplace(new Node(start, NULL, 0, 0)); 
 
 	while (!idq.empty())
 	{
@@ -144,10 +208,9 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 			auto tmp = closed.find(next);
 			if (tmp != closed.end())
 				continue;
-
-			gValue = current->cost + 1;
-			fValue = gValue + heuristic->calculate(grid, next, end);		 
-
+			gValue = current->cost+Gvalue(grid, current, next);
+			fValue = gValue + Hvalue(grid, current, next, end);
+			
 			auto exist = open.find(next);
 			if (exist == open.end() || gValue < (exist->second)->cost)
 			{
@@ -176,7 +239,7 @@ vtkSmartPointer<vtkIdList> AStar::Solve(Graph *grid, vtkIdType start, vtkIdType 
 		}
 		result->InsertNextId(curr->id);
 	}
-	std::cout << "AStar visited=" << visited << std::endl;
+	std::cout << "AStar visited=" << closed.size() << std::endl;
 	return result;
 }
 

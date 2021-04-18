@@ -28,5 +28,4 @@ public:
 	virtual double calculate(Graph *grid, vtkIdType start, vtkIdType target) override;
 private:
 	GraphStat* graphStat;
-	double euclidean(Graph *grid, vtkIdType start, vtkIdType target);
 };

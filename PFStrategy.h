@@ -38,7 +38,6 @@ public:
 	void setHeuristic(Heuristic* heuristic);
 	~AStar();
 private:
-	Heuristic* heuristic;
 	struct Node
 	{
 		vtkIdType id;
@@ -46,9 +45,13 @@ private:
 		double cost;
 		double priority;
 		Node(vtkIdType _id, Node *_prev=NULL, double _cost=0, double _priority=std::numeric_limits<double>::max());
-		//bool operator ()(const Node* lhs, const Node* rhs);
+		bool operator()(const Node* n1, const Node* n2);
 		~Node();
 	};
+	Heuristic* heuristic;
+	double Gvalue(Graph* grid, Node* current, vtkIdType next);
+	double Hvalue(Graph* grid, Node* current, vtkIdType next, vtkIdType end);
+	double* PathLengthFromSource(Graph* grid, Node* target);
 };
 
 class BiDirectional:public PFStrategy

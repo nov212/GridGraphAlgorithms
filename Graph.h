@@ -18,5 +18,6 @@ public:
 	vtkIdType GetNumberOfCells();
 	void GetPoint(vtkIdType id, double x[3]);
 	void LoadFile(const char* path);
+	double GetDistance(vtkIdType start, vtkIdType end);
 	vtkSmartPointer<vtkUnstructuredGrid> GetComponent();
 };
