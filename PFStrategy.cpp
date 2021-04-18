@@ -100,12 +100,12 @@ void AStar::setHeuristic(Heuristic* heuristic)
 
 double AStar::Gvalue(Graph* grid, Node* current, vtkIdType next)
 {
-	//APPROACH 1
-	// return 1;
+	//APPROACH 1, APPROACH 3
+	 return 1;
 
 	//APPROACH 2
 	//returns euclidean distance between current and next node
-	return grid->GetDistance(current->id, next);
+	//return grid->GetDistance(current->id, next);
 }
 
 double* AStar::PathLengthFromSource(Graph* grid, Node* target)
@@ -147,16 +147,20 @@ double AStar::Hvalue(Graph* grid, Node* current, vtkIdType next, vtkIdType end)
 	////distance between current and next node
 	//currentPathLength = distance[0] + edgeLength; 
 	//nodeCounter = distance[1] + 1;
-
+	//delete[] distance;
 	//double averageLength = currentPathLength / nodeCounter;		//average edge length in path
 	//hValue = pathLengthFromNextToEnd/averageLength;	
 
 	 //APPROACH 2
 	// hValue is euclidean distance between  next and end node
 	//gValue is path length between current and next node
-	hValue= grid->GetDistance(next, end);
+	//hValue= grid->GetDistance(next, end);
 
-
+	//APPROACH 3
+	//using average edge length in whole grid to predict a number of remaining vertices
+	//use PathLengthMeter heuristic
+	//gValue is number of passed nodes
+	hValue = heuristic->calculate(grid, next, end);
 	return hValue;
 }
 
