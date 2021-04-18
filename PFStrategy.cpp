@@ -129,19 +129,19 @@ double* AStar::PathLengthFromSource(Graph* grid, Node* target)
 
 double AStar::Hvalue(Graph* grid, Node* current, vtkIdType next, vtkIdType end)
 {
-	//APPROACH 1
-	// fValue if presumptive count of nodes between next and end node calculated by
-	// the formula: DNE/AEL where
-	//DNE-euclidean distance between next and end node
-	// AEL-average edge length between start and next node
-
-	// Arrpoach 1 is used when gValue is number of passed nodes
 	double edgeLength = grid->GetDistance(current->id, next);
 	double pathLengthFromNextToEnd = grid->GetDistance(next, end);
 	double hValue = 0;			   //result
 	int nodeCounter = 0;		  //number of passed nodes between start and next 
 	double currentPathLength = 0; //path length between start node and current node 
-
+	////////////////////////////////////////////////////////////////////
+	//APPROACH 1
+	// fValue if presumptive count of nodes between next and end node calculated by
+	// the formula: DNE/AEL where
+	//DNE-euclidean distance between next and end node
+	// AEL-average edge length between start and next node
+	// Approach 1 is used when gValue is number of passed nodes
+	/////////////////////////////////////////////////////////////////////
 	//double* distance = PathLengthFromSource(grid, current);
 
 	////distance between current and next node
@@ -151,16 +151,21 @@ double AStar::Hvalue(Graph* grid, Node* current, vtkIdType next, vtkIdType end)
 	//double averageLength = currentPathLength / nodeCounter;		//average edge length in path
 	//hValue = pathLengthFromNextToEnd/averageLength;	
 
-	 //APPROACH 2
+	//////////////////////////////////////////////////////////////////// 
+	//APPROACH 2
 	// hValue is euclidean distance between  next and end node
-	//gValue is path length between current and next node
+	// gValue is path length between current and next node
+	////////////////////////////////////////////////////////////////////
 	//hValue= grid->GetDistance(next, end);
 
+	////////////////////////////////////////////////////////////////////
 	//APPROACH 3
 	//using average edge length in whole grid to predict a number of remaining vertices
 	//use PathLengthMeter heuristic
 	//gValue is number of passed nodes
+	////////////////////////////////////////////////////////////////////
 	hValue = heuristic->calculate(grid, next, end);
+	
 	return hValue;
 }
 

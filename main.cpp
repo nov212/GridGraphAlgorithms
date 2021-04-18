@@ -36,14 +36,14 @@ void TestExample(const char*, vtkIdType, vtkIdType);
 
 int main(int argc, char **argv)
 {
-	//TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 10830, 510);  // 1	множитель 40
+	TestExample("D:/meshPathFind/cube_10_layer5_auto.vtk", 10830, 510);  // 1	множитель 40
 	//TestExample("D:/meshPathFind/cube_17_hexahedron.vtk", 4, 6);		 // 2	множитель 2
 	//TestExample("D:/meshPathFind/cube_17_tetra.vtk", 8265, 4319);		 // 3
 	//TestExample("D:/meshPathFind/cuboid_10x1000_auto.vtk", 34, 161354);	 // 4
 	//TestExample("D:/meshPathFind/gear.vtk", 5074, 10054);				 // 5	множитель 100
 	//TestExample("D:/meshPathFind/quad_10_quad.vtk", 1, 2);				 // 6	множитель 2
 	//TestExample("D:/meshPathFind/quad_10_quad_auto.vtk", 6686, 7682);    // 7		множитель 2
-	TestExample("D:/meshPathFind/solid-loft.vtk", 0, 101);				 // 8		множитель 65
+	//TestExample("D:/meshPathFind/solid-loft.vtk", 0, 101);				 // 8		множитель 65
 	//TestExample("D:/meshPathFind/solid-loft.vtk", 0, 786);				 // 9		множитель 2
 	//TestExample("D:/meshPathFind/solid-loft.vtk", 222, 1200);			 // 10			множитель 100
 	//TestExample("D:/meshPathFind/quad_10_quad.vtk", 2827, 7183);		 // 11
